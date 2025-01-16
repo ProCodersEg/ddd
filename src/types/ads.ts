@@ -13,4 +13,9 @@ export interface Ad {
   created_at: string;
   clicks: number;
   impressions: number;
+  max_clicks?: number;
+  max_impressions?: number;
+  target_audience?: string;
+  budget?: number;
+  frequency_cap?: number;
 }

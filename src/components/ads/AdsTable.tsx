@@ -48,22 +48,40 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>Image</TableHead>
             <TableHead>Title</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Clicks</TableHead>
-            <TableHead>Impressions</TableHead>
+            <TableHead>Campaign Period</TableHead>
+            <TableHead>Performance</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {ads.map((ad) => (
             <TableRow key={ad.id}>
+              <TableCell>
+                <img 
+                  src={ad.image_url} 
+                  alt={ad.title} 
+                  className="w-16 h-16 object-cover rounded-md"
+                />
+              </TableCell>
               <TableCell className="font-medium">{ad.title}</TableCell>
               <TableCell>{ad.type}</TableCell>
               <TableCell>{ad.status}</TableCell>
-              <TableCell>{ad.clicks}</TableCell>
-              <TableCell>{ad.impressions}</TableCell>
+              <TableCell>
+                <div className="text-sm">
+                  <p>Start: {new Date(ad.start_date).toLocaleDateString()}</p>
+                  <p>End: {new Date(ad.end_date).toLocaleDateString()}</p>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="text-sm">
+                  <p>Clicks: {ad.clicks} / {ad.max_clicks || '∞'}</p>
+                  <p>Impressions: {ad.impressions} / {ad.max_impressions || '∞'}</p>
+                </div>
+              </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end space-x-2">
                   <Button
