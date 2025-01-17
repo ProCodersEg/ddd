@@ -60,12 +60,12 @@ export default function Index() {
   ]
 
   if (isLoading) {
-    return <div>Loading...</div>
+    return <div>Loading...</div>;
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-4xl font-bold mb-8">Ad Management Dashboard</h1>
+    <div>
+      <h1 className="text-4xl font-bold mb-8">Dashboard</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="p-6 bg-white rounded-lg shadow">
@@ -104,17 +104,19 @@ export default function Index() {
               },
             }}
           >
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <ChartTooltip />
-              <Bar dataKey="active" name="Active" stackId="a" fill="var(--color-active)" />
-              <Bar dataKey="paused" name="Paused" stackId="a" fill="var(--color-paused)" />
-            </BarChart>
+            <ResponsiveContainer>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <ChartTooltip />
+                <Bar dataKey="active" name="Active" stackId="a" fill="var(--color-active)" />
+                <Bar dataKey="paused" name="Paused" stackId="a" fill="var(--color-paused)" />
+              </BarChart>
+            </ResponsiveContainer>
           </ChartContainer>
         </div>
       </div>
     </div>
-  )
+  );
 }
