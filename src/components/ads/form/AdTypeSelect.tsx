@@ -3,7 +3,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 interface AdTypeSelectProps {
   value: string;
-  onValueChange: (value: string) => void;, onValueChange }: AdTypeSelectProps) {
+  onValueChange: (value: string) => void;
+}
+
+export function AdTypeSelect({ value, onValueChange }: AdTypeSelectProps) {
   return (
     <FormItem>
       <FormLabel>Type</FormLabel>
