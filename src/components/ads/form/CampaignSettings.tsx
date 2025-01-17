@@ -68,6 +68,36 @@ export function CampaignSettings({ form }: CampaignSettingsProps) {
           )}
         />
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="clicks"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Current Clicks</FormLabel>
+              <FormControl>
+                <Input type="number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="impressions"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Current Impressions</FormLabel>
+              <FormControl>
+                <Input type="number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
     </div>
   );
 }

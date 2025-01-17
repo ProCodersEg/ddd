@@ -43,6 +43,10 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
     }
   };
 
+  const getTypeColor = (type: string) => {
+    return type === 'banner' ? 'text-blue-500' : 'text-purple-500';
+  };
+
   return (
     <>
       <Table>
@@ -68,7 +72,11 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
                 />
               </TableCell>
               <TableCell className="font-medium">{ad.title}</TableCell>
-              <TableCell>{ad.type}</TableCell>
+              <TableCell>
+                <span className={`font-medium ${getTypeColor(ad.type)}`}>
+                  {ad.type}
+                </span>
+              </TableCell>
               <TableCell>{ad.status}</TableCell>
               <TableCell>
                 <div className="text-sm">
