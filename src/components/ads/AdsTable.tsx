@@ -44,7 +44,7 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
   };
 
   const getTypeColor = (type: string) => {
-    return type === 'banner' ? 'text-blue-500' : 'text-purple-500';
+    return type === 'banner' ? 'text-green-500' : 'text-blue-500';
   };
 
   return (

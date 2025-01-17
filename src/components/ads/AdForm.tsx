@@ -36,6 +36,8 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
       target_audience: ad?.target_audience || "All",
       budget: ad?.budget || 100,
       frequency_cap: ad?.frequency_cap || 3,
+      clicks: ad?.clicks || 0,
+      impressions: ad?.impressions || 0,
     },
   });
 
@@ -73,92 +75,88 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <AdTypeSelect value={field.value} onValueChange={field.onChange} />
-              )}
-            />
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <AdTypeSelect value={field.value} onValueChange={field.onChange} />
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Title</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ad title" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Ad description" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="redirect_url"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Redirect URL</FormLabel>
+                <FormControl>
+                  <Input placeholder="https://example.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Status</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <Input placeholder="Ad title" {...field} />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="paused">Paused</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Ad description" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <FormField
+            control={form.control}
+            name="image_url"
+            render={({ field }) => (
+              <MediaUpload value={field.value} onChange={field.onChange} />
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="redirect_url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Redirect URL</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="paused">Paused</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="space-y-4">
-            <FormField
-              control={form.control}
-              name="image_url"
-              render={({ field }) => (
-                <MediaUpload value={field.value} onChange={field.onChange} />
-              )}
-            />
-
-            <CampaignSettings form={form} />
-          </div>
+          <CampaignSettings form={form} />
         </div>
 
         <div className="flex justify-end space-x-2">

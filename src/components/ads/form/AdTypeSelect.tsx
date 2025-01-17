@@ -3,10 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 interface AdTypeSelectProps {
   value: string;
-  onValueChange: (value: string) => void;
-}
-
-export function AdTypeSelect({ value, onValueChange }: AdTypeSelectProps) {
+  onValueChange: (value: string) => void;, onValueChange }: AdTypeSelectProps) {
   return (
     <FormItem>
       <FormLabel>Type</FormLabel>
@@ -18,10 +15,10 @@ export function AdTypeSelect({ value, onValueChange }: AdTypeSelectProps) {
         </FormControl>
         <SelectContent>
           <SelectItem value="banner">
-            <span className="text-blue-500 font-medium">Banner</span>
+            <span className="text-green-500 font-medium">Banner</span>
           </SelectItem>
           <SelectItem value="interstitial">
-            <span className="text-purple-500 font-medium">Interstitial</span>
+            <span className="text-blue-500 font-medium">Interstitial</span>
           </SelectItem>
         </SelectContent>
       </Select>
