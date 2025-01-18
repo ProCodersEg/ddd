@@ -42,10 +42,11 @@ export function AdHistory() {
       const confirmed = window.confirm("Are you sure you want to delete all history entries? This action cannot be undone.");
       if (!confirmed) return;
 
+      // Execute a raw delete query to remove all records
       const { error } = await supabase
         .from('ad_history')
         .delete()
-        .not('id', 'is', null); // This deletes all records where id is not null (i.e., all records)
+        .gte('id', '00000000-0000-0000-0000-000000000000'); // This will match all valid UUIDs
 
       if (error) throw error;
 
