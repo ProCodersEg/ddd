@@ -31,6 +31,21 @@ public class InterstitialAdView extends ConstraintLayout {
 
         closeButton.setOnClickListener(v -> dismiss());
         setOnClickListener(v -> handleAdClick());
+
+        // Set window to full screen
+        if (context instanceof Activity) {
+            Window window = ((Activity) context).getWindow();
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN
+            );
+        }
+
+        // Set layout to match parent with full screen
+        setLayoutParams(new LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ));
     }
 
     public void setAd(Ad ad) {
