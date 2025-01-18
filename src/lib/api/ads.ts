@@ -29,16 +29,46 @@ export async function fetchActiveInterstitialAds() {
 
 // Record ad click
 export async function recordAdClick(adId: string) {
-  const { error } = await supabase
+  // First, update the clicks count in the ads table
+  const { error: updateError } = await supabase
+    .from('ads')
+    .update({ clicks: supabase.raw('clicks + 1') })
+    .eq('id', adId);
+  
+  if (updateError) {
+    console.error('Error updating clicks:', updateError);
+    throw updateError;
+  }
+
+  // Then call the RPC function for any additional processing
+  const { error: rpcError } = await supabase
     .rpc('increment_ad_clicks', { ad_id: adId });
   
-  if (error) throw error;
+  if (rpcError) {
+    console.error('Error in RPC call:', rpcError);
+    throw rpcError;
+  }
 }
 
 // Record ad impression
 export async function recordAdImpression(adId: string) {
-  const { error } = await supabase
+  // First, update the impressions count in the ads table
+  const { error: updateError } = await supabase
+    .from('ads')
+    .update({ impressions: supabase.raw('impressions + 1') })
+    .eq('id', adId);
+  
+  if (updateError) {
+    console.error('Error updating impressions:', updateError);
+    throw updateError;
+  }
+
+  // Then call the RPC function for any additional processing
+  const { error: rpcError } = await supabase
     .rpc('increment_ad_impressions', { ad_id: adId });
   
-  if (error) throw error;
+  if (rpcError) {
+    console.error('Error in RPC call:', rpcError);
+    throw rpcError;
+  }
 }
