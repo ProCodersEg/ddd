@@ -54,7 +54,8 @@ public class AdApiClient {
 
         JSONObject jsonBody = new JSONObject();
         try {
-            jsonBody.put("clicks", "clicks + 1");
+            // Send the actual updated click count instead of the increment operation
+            jsonBody.put("clicks", clicks + 1);
         } catch (JSONException e) {
             Log.e("AdApiClient", "Error creating JSON body", e);
             return;
