@@ -42,14 +42,16 @@ BEGIN
     INSERT INTO ad_history (ad_id, action_type, ad_title, ad_description, ad_image, clicks)
     VALUES (NEW.id, 'updated', NEW.title, NEW.description, NEW.image_url, NEW.clicks);
   ELSIF TG_OP = 'DELETE' THEN
+    -- For deleted ads, we still want to keep the history but with ad_id set to NULL
     INSERT INTO ad_history (ad_id, action_type, ad_title, ad_description, ad_image, clicks)
-    VALUES (OLD.id, 'deleted', OLD.title, OLD.description, OLD.image_url, OLD.clicks);
+    VALUES (NULL, 'deleted', OLD.title, OLD.description, OLD.image_url, OLD.clicks);
   END IF;
   RETURN NEW;
 END;
 $$;
 
 -- Create triggers
+DROP TRIGGER IF EXISTS ad_changes_trigger ON ads;
 CREATE TRIGGER ad_changes_trigger
   AFTER INSERT OR UPDATE OR DELETE ON ads
   FOR EACH ROW
