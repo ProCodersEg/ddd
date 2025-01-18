@@ -42,10 +42,11 @@ export function AdHistory() {
       const confirmed = window.confirm("Are you sure you want to delete all history entries? This action cannot be undone.");
       if (!confirmed) return;
 
+      // Delete all records without any filter
       const { error } = await supabase
         .from('ad_history')
         .delete()
-        .gte('created_at', '2000-01-01');
+        .neq('id', '00000000-0000-0000-0000-000000000000');
 
       if (error) throw error;
 
