@@ -28,10 +28,10 @@ interface AdFormProps {
 export function AdForm({ ad, onSuccess }: AdFormProps) {
   const { toast } = useToast();
   const form = useForm({
-    defaultValues: {
+    defaultValues: ad ? {
       ...ad,
-      start_date: ad?.start_date ? new Date(ad.start_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
-    } || {
+      start_date: ad.start_date ? new Date(ad.start_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+    } : {
       title: "",
       description: "",
       image_url: "",
