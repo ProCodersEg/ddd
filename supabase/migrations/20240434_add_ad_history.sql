@@ -20,22 +20,30 @@ create table if not exists public.ad_history (
 -- Add RLS policies
 alter table public.ad_history enable row level security;
 
+-- Drop existing policies if they exist
+DO $$ 
+BEGIN
+    EXECUTE 'DROP POLICY IF EXISTS "Allow anonymous read access" ON public.ad_history';
+    EXECUTE 'DROP POLICY IF EXISTS "Allow authenticated users to insert history" ON public.ad_history';
+    EXECUTE 'DROP POLICY IF EXISTS "Allow authenticated users to update history" ON public.ad_history';
+END $$;
+
 -- Allow read access for all users
-create policy if not exists "Allow anonymous read access"
+create policy "Allow anonymous read access"
   on public.ad_history
   for select
   to anon
   using (true);
 
 -- Allow insert access for authenticated users
-create policy if not exists "Allow authenticated users to insert history"
+create policy "Allow authenticated users to insert history"
   on public.ad_history
   for insert
   to authenticated
   with check (true);
 
 -- Allow update access for authenticated users
-create policy if not exists "Allow authenticated users to update history"
+create policy "Allow authenticated users to update history"
   on public.ad_history
   for update
   to authenticated
