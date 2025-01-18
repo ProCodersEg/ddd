@@ -73,6 +73,7 @@ public class AdApiClient {
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Prefer", "return=minimal")
+                .addHeader("Accept", "application/json")
                 .patch(body)
                 .build();
 
@@ -92,12 +93,40 @@ public class AdApiClient {
                         Log.d("AdApiClient", "Successfully recorded click for ad: " + adId + 
                               " - Status code: " + response.code() + 
                               " - New click count: " + (currentClicks + 1));
+                        
+                        // Double-check the update was successful by making a GET request
+                        verifyClickUpdate(adId, currentClicks + 1);
                     }
                 } catch (IOException e) {
                     Log.e("AdApiClient", "Error reading response", e);
                 } finally {
                     response.close();
                 }
+            }
+        });
+    }
+
+    private void verifyClickUpdate(String adId, int expectedClicks) {
+        Request request = new Request.Builder()
+                .url(BASE_URL + "ads?id=eq." + adId + "&select=clicks")
+                .addHeader("apikey", getApiKey())
+                .addHeader("Authorization", "Bearer " + getApiKey())
+                .get()
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, IOException e) {
+                Log.e("AdApiClient", "Failed to verify click update", e);
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful() && response.body() != null) {
+                    String responseBody = response.body().string();
+                    Log.d("AdApiClient", "Verification response: " + responseBody);
+                }
+                response.close();
             }
         });
     }
