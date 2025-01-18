@@ -54,7 +54,8 @@ public class AdApiClient {
 
         JSONObject jsonBody = new JSONObject();
         try {
-            jsonBody.put("clicks", clicks);
+            // Use increment operator
+            jsonBody.put("clicks", "clicks + 1");
         } catch (JSONException e) {
             Log.e("AdApiClient", "Error creating JSON body", e);
             return;
@@ -63,7 +64,6 @@ public class AdApiClient {
         MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
         RequestBody body = RequestBody.create(mediaType, jsonBody.toString());
 
-        // Changed URL construction to use single quotes for the eq operator
         Request request = new Request.Builder()
                 .url(BASE_URL + "ads?id=eq." + adId)
                 .addHeader("apikey", getApiKey())
@@ -105,7 +105,8 @@ public class AdApiClient {
 
         JSONObject jsonBody = new JSONObject();
         try {
-            jsonBody.put("impressions", impressions);
+            // Use increment operator
+            jsonBody.put("impressions", "impressions + 1");
         } catch (JSONException e) {
             Log.e("AdApiClient", "Error creating JSON body", e);
             return;
@@ -114,7 +115,6 @@ public class AdApiClient {
         MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
         RequestBody body = RequestBody.create(mediaType, jsonBody.toString());
 
-        // Changed URL construction to use single quotes for the eq operator
         Request request = new Request.Builder()
                 .url(BASE_URL + "ads?id=eq." + adId)
                 .addHeader("apikey", getApiKey())
