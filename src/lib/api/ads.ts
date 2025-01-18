@@ -32,7 +32,6 @@ export async function fetchActiveInterstitialAds() {
   return data as Ad[];
 }
 
-// Record ad click using RPC and check limits
 export async function recordAdClick(adId: string) {
   const { data: ad, error: fetchError } = await supabase
     .from('ads')
@@ -57,7 +56,10 @@ export async function recordAdClick(adId: string) {
   if (ad.max_clicks && ad.clicks + 1 >= ad.max_clicks) {
     const { error: updateError } = await supabase
       .from('ads')
-      .update({ status: 'paused' })
+      .update({ 
+        status: 'paused',
+        pause_reason: 'limits' // Add pause reason
+      })
       .eq('id', adId);
 
     if (updateError) {
@@ -67,7 +69,6 @@ export async function recordAdClick(adId: string) {
   }
 }
 
-// Record ad impression using RPC and check limits
 export async function recordAdImpression(adId: string) {
   const { data: ad, error: fetchError } = await supabase
     .from('ads')
@@ -92,7 +93,10 @@ export async function recordAdImpression(adId: string) {
   if (ad.max_impressions && ad.impressions + 1 >= ad.max_impressions) {
     const { error: updateError } = await supabase
       .from('ads')
-      .update({ status: 'paused' })
+      .update({ 
+        status: 'paused',
+        pause_reason: 'limits' // Add pause reason
+      })
       .eq('id', adId);
 
     if (updateError) {
@@ -114,7 +118,10 @@ export async function checkAndUpdateAdStatus(ad: Ad) {
   if (shouldPause && ad.status === 'active') {
     const { error } = await supabase
       .from('ads')
-      .update({ status: 'paused' })
+      .update({ 
+        status: 'paused',
+        pause_reason: 'limits' // Add pause reason
+      })
       .eq('id', ad.id);
 
     if (error) {

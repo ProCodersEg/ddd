@@ -24,17 +24,21 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
     const checkLimitsAndStatus = async () => {
       try {
         await Promise.all(ads.map(async (ad) => {
-          // Check if ad should be reactivated (limits increased)
+          // Only check for reactivation if the ad was paused due to limits
           if (ad.status === 'paused') {
             const shouldReactivate = (
               (!ad.max_clicks || ad.clicks < ad.max_clicks) &&
-              (!ad.max_impressions || ad.impressions < ad.max_impressions)
+              (!ad.max_impressions || ad.impressions < ad.max_impressions) &&
+              ad.pause_reason === 'limits' // Only reactivate if paused due to limits
             );
             
             if (shouldReactivate) {
               const { error } = await supabase
                 .from('ads')
-                .update({ status: 'active' })
+                .update({ 
+                  status: 'active',
+                  pause_reason: null // Clear the pause reason
+                })
                 .eq('id', ad.id);
                 
               if (error) {
@@ -43,7 +47,7 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
                 onUpdate();
               }
             }
-          } else {
+          } else if (ad.status === 'active') {
             await checkAndUpdateAdStatus(ad);
           }
         }));

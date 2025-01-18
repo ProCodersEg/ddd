@@ -1,4 +1,6 @@
 export type AdType = 'banner' | 'interstitial';
+export type AdStatus = 'active' | 'paused';
+export type PauseReason = 'manual' | 'limits' | null;
 
 export interface Ad {
   id: string;
@@ -8,7 +10,8 @@ export interface Ad {
   image_url: string;
   redirect_url: string;
   start_date: string;
-  status: 'active' | 'paused';
+  status: AdStatus;
+  pause_reason?: PauseReason;
   created_at: string;
   clicks: number;
   impressions: number;
