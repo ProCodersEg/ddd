@@ -17,6 +17,11 @@ interface AdHistoryEntry {
   created_at: string;
 }
 
+interface DeleteAllHistoryResponse {
+  success: boolean;
+  deleted_count: number;
+}
+
 export function AdHistory() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -46,24 +51,25 @@ export function AdHistory() {
 
       console.log('Starting deletion of all history entries');
 
-      // Execute RPC function to delete all history
-      const { data, error } = await supabase.rpc('delete_all_history');
+      const { data, error } = await supabase
+        .rpc('delete_all_history');
 
       if (error) {
         console.error('Error deleting history:', error);
         throw error;
       }
 
-      console.log('Delete operation response:', data);
+      const response = data as DeleteAllHistoryResponse;
+      console.log('Delete operation response:', response);
 
       // Force immediate cache invalidation and refetch
       await queryClient.invalidateQueries({ queryKey: ['adHistory'] });
       
       toast({
         title: "Success",
-        description: `Successfully deleted ${data.deleted_count} history entries`,
+        description: `Successfully deleted ${response.deleted_count} history entries`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting history:', error);
       toast({
         title: "Error",
