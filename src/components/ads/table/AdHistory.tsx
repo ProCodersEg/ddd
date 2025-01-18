@@ -47,28 +47,27 @@ export function AdHistory() {
       console.log('Starting deletion of all history entries');
 
       // Execute RPC function to delete all history
-      const { error } = await supabase.rpc('delete_all_history');
+      const { data, error } = await supabase.rpc('delete_all_history');
 
       if (error) {
         console.error('Error deleting history:', error);
         throw error;
       }
 
-      console.log('Successfully deleted all history entries');
+      console.log('Delete operation response:', data);
 
       // Force immediate cache invalidation and refetch
-      queryClient.removeQueries({ queryKey: ['adHistory'] });
-      await queryClient.fetchQuery({ queryKey: ['adHistory'] });
+      await queryClient.invalidateQueries({ queryKey: ['adHistory'] });
       
       toast({
         title: "Success",
-        description: "All history entries have been deleted",
+        description: `Successfully deleted ${data.deleted_count} history entries`,
       });
     } catch (error) {
       console.error('Error deleting history:', error);
       toast({
         title: "Error",
-        description: "Failed to delete history entries",
+        description: "Failed to delete history entries. Please try again.",
         variant: "destructive",
       });
     }
