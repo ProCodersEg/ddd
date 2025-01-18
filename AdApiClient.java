@@ -17,10 +17,9 @@ public class AdApiClient {
         return API_KEY;
     }
 
-    public void fetchBannerAds(AdCallback callback) {
-        // Modified query to only fetch active ads
+    public void fetchInterstitialAds(AdCallback callback) {
         Request request = new Request.Builder()
-                .url(BASE_URL + "ads?type=eq.banner&status=eq.active")
+                .url(BASE_URL + "ads?type=eq.interstitial&status=eq.active")
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/json")
@@ -40,7 +39,7 @@ public class AdApiClient {
                     callback.onSuccess(responseBody);
                 } else {
                     String errorBody = response.body() != null ? response.body().string() : "Unknown error";
-                    Log.e("AdApiClient", "Error fetching ads: " + response.code() + " - " + errorBody);
+                    Log.e("AdApiClient", "Error fetching interstitial ads: " + response.code() + " - " + errorBody);
                     callback.onError("Error: " + response.code());
                 }
             }
