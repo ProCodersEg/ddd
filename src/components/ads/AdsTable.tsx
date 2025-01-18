@@ -82,8 +82,32 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
         throw new Error("Ad not found");
       }
 
-      console.log("Creating deletion history entry");
-      // Create history entry first
+      console.log("Deleting existing history entries");
+      // First delete any existing history entries
+      const { error: historyDeleteError } = await supabase
+        .from('ad_history')
+        .delete()
+        .eq('ad_id', id);
+
+      if (historyDeleteError) {
+        console.error("Error deleting history entries:", historyDeleteError);
+        throw historyDeleteError;
+      }
+
+      console.log("Deleting ad");
+      // Now delete the ad
+      const { error: deleteError } = await supabase
+        .from('ads')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) {
+        console.error("Error deleting ad:", deleteError);
+        throw deleteError;
+      }
+
+      console.log("Creating final history entry");
+      // Create the final history entry
       const { error: historyError } = await supabase
         .from('ad_history')
         .insert({
@@ -97,19 +121,7 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
       if (historyError) {
         console.error('Error creating deletion history:', historyError);
-        throw historyError;
-      }
-
-      console.log("Deleting ad");
-      // Delete the ad (history records will be automatically deleted due to CASCADE)
-      const { error: deleteError } = await supabase
-        .from('ads')
-        .delete()
-        .eq('id', id);
-
-      if (deleteError) {
-        console.error("Error deleting ad:", deleteError);
-        throw deleteError;
+        // Don't throw here since the deletion was successful
       }
 
       console.log("Delete process completed successfully");
