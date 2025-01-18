@@ -19,7 +19,7 @@ export default function AdsManagement() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ads')
-        .select('id, type, title, description, image_url, redirect_url, start_date, status, created_at, clicks, impressions, max_clicks, max_impressions, target_audience, budget, frequency_cap')
+        .select('id, type, title, description, image_url, redirect_url, start_date, status, created_at, clicks, impressions, max_clicks, max_impressions, target_audience, frequency_cap')
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -39,7 +39,6 @@ export default function AdsManagement() {
         max_clicks: ad.max_clicks || null,
         max_impressions: ad.max_impressions || null,
         target_audience: ad.target_audience || 'All',
-        budget: ad.budget || 100,
         frequency_cap: ad.frequency_cap || 3
       })) as Ad[];
     },
