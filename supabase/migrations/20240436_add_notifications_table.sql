@@ -1,3 +1,4 @@
+-- Create notifications table
 create table notifications (
   id uuid default uuid_generate_v4() primary key,
   ad_id uuid references ads(id),
