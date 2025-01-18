@@ -36,7 +36,10 @@ export function HistoryList({ filter }: HistoryListProps) {
 
       const { data, error, count } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching history:', error);
+        throw error;
+      }
 
       return {
         items: data as AdHistory[],
