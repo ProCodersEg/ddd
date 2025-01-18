@@ -15,7 +15,13 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
+        <div className="animate-pulse text-lg text-muted-foreground">
+          Loading...
+        </div>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
@@ -32,22 +38,31 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
-              <LoginForm />
-            </div>
-          } />
+          <Route
+            path="/login"
+            element={
+              <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/50">
+                <LoginForm />
+              </div>
+            }
+          />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={
-            <PrivateRoute>
-              <Index />
-            </PrivateRoute>
-          } />
-          <Route path="/ads" element={
-            <PrivateRoute>
-              <AdsManagement />
-            </PrivateRoute>
-          } />
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute>
+                <Index />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/ads"
+            element={
+              <PrivateRoute>
+                <AdsManagement />
+              </PrivateRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
