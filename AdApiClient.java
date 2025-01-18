@@ -18,6 +18,7 @@ public class AdApiClient {
     }
 
     public void fetchBannerAds(AdCallback callback) {
+        // Modified query to only fetch active ads
         Request request = new Request.Builder()
                 .url(BASE_URL + "ads?type=eq.banner&status=eq.active")
                 .addHeader("apikey", getApiKey())
@@ -54,7 +55,7 @@ public class AdApiClient {
 
         // First, verify current clicks in database
         Request getRequest = new Request.Builder()
-                .url(BASE_URL + "ads?id=eq." + adId + "&select=clicks")
+                .url(BASE_URL + "ads?id=eq." + adId + "&select=clicks,status")
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/json")
@@ -75,9 +76,16 @@ public class AdApiClient {
                         JSONArray jsonArray = new JSONArray(responseBody);
                         if (jsonArray.length() > 0) {
                             JSONObject ad = jsonArray.getJSONObject(0);
-                            int dbClicks = ad.getInt("clicks");
-                            Log.d("AdApiClient", "Current clicks in DB: " + dbClicks);
-                            incrementClickCount(adId, dbClicks);
+                            String status = ad.getString("status");
+                            
+                            // Only increment clicks if ad is still active
+                            if ("active".equals(status)) {
+                                int dbClicks = ad.getInt("clicks");
+                                Log.d("AdApiClient", "Current clicks in DB: " + dbClicks);
+                                incrementClickCount(adId, dbClicks);
+                            } else {
+                                Log.d("AdApiClient", "Ad is not active, skipping click increment");
+                            }
                         }
                     }
                 } catch (JSONException e) {
