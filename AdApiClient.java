@@ -1,90 +1,51 @@
-import android.content.Context;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.os.Bundle;
-import android.util.Log;
-import org.json.JSONException;
-import org.json.JSONObject;
-import java.io.IOException;
-import okhttp3.*;
-
 public class AdApiClient {
-    private static final String TAG = "AdApiClient";
-    private static final String BASE_URL = "https://your-supabase-url.supabase.co/rest/v1/";
+    private static final String BASE_URL = "https://oxhcswfkvtxfpiilaiuo.supabase.co/rest/v1/";
+    private static final String API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94aGNzd2ZrdnR4ZnBpaWxhaXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcwNTA2MzEsImV4cCI6MjA1MjYyNjYzMX0.xFTBbkLDuW1AjLIpXjJr8R1zq1g10NftsJzXOEYzsDE";
     private final OkHttpClient client;
-    private final Context context;
-    private String apiKey;
 
-    public AdApiClient(Context context) {
-        this.context = context;
-        this.client = new OkHttpClient();
-        loadApiKey();
-    }
-
-    private void loadApiKey() {
-        try {
-            ApplicationInfo ai = context.getPackageManager()
-                .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-            Bundle bundle = ai.metaData;
-            apiKey = bundle.getString("com.me.testelements.API_KEY");
-            if (apiKey == null) {
-                Log.e(TAG, "API key not found in metadata");
-            }
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Failed to load API key from metadata", e);
-        }
+    public AdApiClient() {
+        client = new OkHttpClient();
     }
 
     public void fetchBannerAds(AdCallback callback) {
-        if (apiKey == null) {
-            callback.onError("API key not initialized");
-            return;
-        }
-
         Request request = new Request.Builder()
-                .url(BASE_URL + "ads")
-                .addHeader("apikey", apiKey)
-                .addHeader("Authorization", "Bearer " + apiKey)
+                .url(BASE_URL + "ads?type=eq.banner&status=eq.active")
+                .addHeader("apikey", API_KEY)
+                .addHeader("Authorization", "Bearer " + API_KEY)
                 .build();
 
         client.newCall(request).enqueue(new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
-                callback.onError("Network error: " + e.getMessage());
+            public void onFailure(@NonNull Call call, IOException e) {
+                callback.onError(e.getMessage());
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    callback.onError("Server error: " + response.code());
-                    return;
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String responseBody = response.body() != null ? response.body().string() : null;
+                    callback.onSuccess(responseBody);
+                } else {
+                    callback.onError("Error: " + response.code());
                 }
-                
-                String responseData = response.body().string();
-                callback.onSuccess(responseData);
             }
         });
     }
 
     public void recordAdClick(String adId, int clicks) {
-        if (apiKey == null) {
-            Log.e(TAG, "API key not initialized");
-            return;
-        }
-
         JSONObject jsonBody = new JSONObject();
         try {
             jsonBody.put("id", adId);
             jsonBody.put("clicks", clicks);
         } catch (JSONException e) {
-            Log.e(TAG, "Error creating JSON body", e);
+            Log.e("AdApiClient", "Error creating JSON body", e);
             return;
         }
 
         Request request = new Request.Builder()
                 .url(BASE_URL + "ads?id=eq." + adId)
-                .addHeader("apikey", apiKey)
-                .addHeader("Authorization", "Bearer " + apiKey)
+                .addHeader("apikey", API_KEY)
+                .addHeader("Authorization", "Bearer " + API_KEY)
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Prefer", "return=minimal")
                 .patch(RequestBody.create(
@@ -95,38 +56,34 @@ public class AdApiClient {
 
         client.newCall(request).enqueue(new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
-                Log.e(TAG, "Error recording click", e);
+            public void onFailure(@NonNull Call call, IOException e) {
+                Log.e("AdApiClient", "Failed to record click", e);
             }
 
             @Override
-            public void onResponse(Call call, Response response) {
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
                 if (!response.isSuccessful()) {
-                    Log.e(TAG, "Error recording click: " + response.code());
+                    Log.e("AdApiClient", "Error recording click: " + response.code());
                 }
+                response.close();
             }
         });
     }
 
     public void recordAdImpression(String adId, int impressions) {
-        if (apiKey == null) {
-            Log.e(TAG, "API key not initialized");
-            return;
-        }
-
         JSONObject jsonBody = new JSONObject();
         try {
             jsonBody.put("id", adId);
             jsonBody.put("impressions", impressions);
         } catch (JSONException e) {
-            Log.e(TAG, "Error creating JSON body", e);
+            Log.e("AdApiClient", "Error creating JSON body", e);
             return;
         }
 
         Request request = new Request.Builder()
                 .url(BASE_URL + "ads?id=eq." + adId)
-                .addHeader("apikey", apiKey)
-                .addHeader("Authorization", "Bearer " + apiKey)
+                .addHeader("apikey", API_KEY)
+                .addHeader("Authorization", "Bearer " + API_KEY)
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Prefer", "return=minimal")
                 .patch(RequestBody.create(
@@ -137,15 +94,16 @@ public class AdApiClient {
 
         client.newCall(request).enqueue(new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
-                Log.e(TAG, "Error recording impression", e);
+            public void onFailure(@NonNull Call call, IOException e) {
+                Log.e("AdApiClient", "Failed to record impression", e);
             }
 
             @Override
-            public void onResponse(Call call, Response response) {
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
                 if (!response.isSuccessful()) {
-                    Log.e(TAG, "Error recording impression: " + response.code());
+                    Log.e("AdApiClient", "Error recording impression: " + response.code());
                 }
+                response.close();
             }
         });
     }
