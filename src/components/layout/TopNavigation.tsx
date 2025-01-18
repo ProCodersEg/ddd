@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Bell, LogOut, Home, LayoutDashboard } from 'lucide-react';
 import {
@@ -42,6 +42,29 @@ export function TopNavigation() {
       return data as Notification[];
     },
   });
+
+  // Set up real-time subscription for notifications
+  useEffect(() => {
+    const subscription = supabase
+      .channel('notifications-channel')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications'
+        },
+        (payload) => {
+          console.log('Real-time notification update:', payload);
+          queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [queryClient]);
 
   const unreadCount = notifications?.filter(n => !n.read).length || 0;
 
