@@ -52,14 +52,21 @@ public class AdApiClient {
     }
 
     public void recordAdClick(String adId, int clicks) {
+        if (adId == null || adId.isEmpty()) {
+            Log.e("AdApiClient", "Invalid ad ID provided");
+            return;
+        }
+
         JSONObject jsonBody = new JSONObject();
         try {
-            jsonBody.put("id", adId);
             jsonBody.put("clicks", clicks);
         } catch (JSONException e) {
             Log.e("AdApiClient", "Error creating JSON body", e);
             return;
         }
+
+        MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
+        RequestBody body = RequestBody.create(mediaType, jsonBody.toString());
 
         Request request = new Request.Builder()
                 .url(BASE_URL + "ads?id=eq." + adId)
@@ -67,10 +74,7 @@ public class AdApiClient {
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Prefer", "return=minimal")
-                .patch(RequestBody.create(
-                        MediaType.parse("application/json"),
-                        jsonBody.toString()
-                ))
+                .patch(body)
                 .build();
 
         client.newCall(request).enqueue(new Callback() {
@@ -81,23 +85,38 @@ public class AdApiClient {
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) {
-                if (!response.isSuccessful()) {
-                    Log.e("AdApiClient", "Error recording click: " + response.code());
+                try {
+                    if (!response.isSuccessful()) {
+                        String errorBody = response.body() != null ? response.body().string() : "No error details";
+                        Log.e("AdApiClient", "Error recording click: " + response.code() + ", " + errorBody);
+                    } else {
+                        Log.d("AdApiClient", "Successfully recorded click for ad: " + adId);
+                    }
+                } catch (IOException e) {
+                    Log.e("AdApiClient", "Error reading response", e);
+                } finally {
+                    response.close();
                 }
-                response.close();
             }
         });
     }
 
     public void recordAdImpression(String adId, int impressions) {
+        if (adId == null || adId.isEmpty()) {
+            Log.e("AdApiClient", "Invalid ad ID provided");
+            return;
+        }
+
         JSONObject jsonBody = new JSONObject();
         try {
-            jsonBody.put("id", adId);
             jsonBody.put("impressions", impressions);
         } catch (JSONException e) {
             Log.e("AdApiClient", "Error creating JSON body", e);
             return;
         }
+
+        MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
+        RequestBody body = RequestBody.create(mediaType, jsonBody.toString());
 
         Request request = new Request.Builder()
                 .url(BASE_URL + "ads?id=eq." + adId)
@@ -105,10 +124,7 @@ public class AdApiClient {
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Prefer", "return=minimal")
-                .patch(RequestBody.create(
-                        MediaType.parse("application/json"),
-                        jsonBody.toString()
-                ))
+                .patch(body)
                 .build();
 
         client.newCall(request).enqueue(new Callback() {
@@ -119,10 +135,18 @@ public class AdApiClient {
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) {
-                if (!response.isSuccessful()) {
-                    Log.e("AdApiClient", "Error recording impression: " + response.code());
+                try {
+                    if (!response.isSuccessful()) {
+                        String errorBody = response.body() != null ? response.body().string() : "No error details";
+                        Log.e("AdApiClient", "Error recording impression: " + response.code() + ", " + errorBody);
+                    } else {
+                        Log.d("AdApiClient", "Successfully recorded impression for ad: " + adId);
+                    }
+                } catch (IOException e) {
+                    Log.e("AdApiClient", "Error reading response", e);
+                } finally {
+                    response.close();
                 }
-                response.close();
             }
         });
     }
