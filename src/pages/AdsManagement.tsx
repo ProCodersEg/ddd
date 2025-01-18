@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { AdForm } from "@/components/ads/AdForm";
 import { AdsTable } from "@/components/ads/AdsTable";
 import { supabase } from "@/lib/supabase";
@@ -34,9 +35,9 @@ export default function AdsManagement() {
   });
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Ad Management</h1>
+    <div className="container mx-auto px-4 sm:px-6 py-6 space-y-6 max-w-7xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Ad Management</h1>
         <Sheet open={isCreating} onOpenChange={setIsCreating}>
           <SheetTrigger asChild>
             <Button>
@@ -44,31 +45,39 @@ export default function AdsManagement() {
               Create New Ad
             </Button>
           </SheetTrigger>
-          <SheetContent className="w-[400px] sm:w-[540px]">
-            <SheetHeader>
-              <SheetTitle>Create New Ad</SheetTitle>
-            </SheetHeader>
-            <AdForm 
-              onSuccess={() => {
-                setIsCreating(false);
-                refetch();
-                toast({
-                  title: "Success",
-                  description: "Ad created successfully",
-                });
-              }}
-            />
+          <SheetContent className="w-full sm:w-[540px] p-0">
+            <ScrollArea className="h-full">
+              <div className="p-6">
+                <SheetHeader>
+                  <SheetTitle>Create New Ad</SheetTitle>
+                </SheetHeader>
+                <AdForm 
+                  onSuccess={() => {
+                    setIsCreating(false);
+                    refetch();
+                    toast({
+                      title: "Success",
+                      description: "Ad created successfully",
+                    });
+                  }}
+                />
+              </div>
+            </ScrollArea>
           </SheetContent>
         </Sheet>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <p>Loading ads...</p>
-        </div>
-      ) : (
-        <AdsTable ads={ads || []} onUpdate={refetch} />
-      )}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <p>Loading ads...</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <AdsTable ads={ads || []} onUpdate={refetch} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
