@@ -14,9 +14,7 @@ export interface Ad {
   pause_reason?: PauseReason;
   created_at: string;
   clicks: number;
-  impressions: number;
   max_clicks?: number;
-  max_impressions?: number;
   target_audience?: string;
   frequency_cap?: number;
 }
