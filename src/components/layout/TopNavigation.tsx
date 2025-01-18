@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Bell, LogOut } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,9 +8,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { signOut } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 interface Notification {
   id: string;
@@ -23,6 +26,9 @@ interface Notification {
 }
 
 export function TopNavigation() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
   const { data: notifications } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
@@ -45,14 +51,31 @@ export function TopNavigation() {
       .eq('id', notificationId);
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
+      navigate('/login');
+    } catch (error) {
+      toast({
+        title: "Error logging out",
+        description: "There was a problem logging out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
-    <nav className="h-16 flex items-center justify-between px-2">
+    <nav className="h-16 flex items-center justify-between px-4">
       <div className="flex items-center space-x-6">
         <Link 
           to="/" 
           className={cn(
             "text-sm font-medium transition-colors hover:text-primary",
-            "text-muted-foreground px-2 py-1.5 rounded-md hover:bg-accent"
+            "text-muted-foreground px-3 py-2 rounded-md hover:bg-accent"
           )}
         >
           Home
@@ -61,19 +84,10 @@ export function TopNavigation() {
           to="/ads" 
           className={cn(
             "text-sm font-medium transition-colors hover:text-primary",
-            "text-muted-foreground px-2 py-1.5 rounded-md hover:bg-accent"
+            "text-muted-foreground px-3 py-2 rounded-md hover:bg-accent"
           )}
         >
           Ads
-        </Link>
-        <Link 
-          to="/analytics" 
-          className={cn(
-            "text-sm font-medium transition-colors hover:text-primary",
-            "text-muted-foreground px-2 py-1.5 rounded-md hover:bg-accent"
-          )}
-        >
-          Analytics
         </Link>
       </div>
 
@@ -123,17 +137,15 @@ export function TopNavigation() {
             )}
           </DropdownMenuContent>
         </DropdownMenu>
-        <div className="relative">
-          <Link 
-            to="/profile" 
-            className={cn(
-              "text-sm font-medium transition-colors hover:text-primary",
-              "text-muted-foreground px-2 py-1.5 rounded-md hover:bg-accent"
-            )}
-          >
-            Profile
-          </Link>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          Logout
+        </Button>
       </div>
     </nav>
   );
