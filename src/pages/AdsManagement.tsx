@@ -52,10 +52,11 @@ export default function AdsManagement() {
     setIsProcessing(true);
     try {
       if (action === 'delete') {
+        // Delete all ads without using neq.0
         const { error } = await supabase
           .from('ads')
           .delete()
-          .neq('id', '0'); // Delete all ads
+          .in('id', ads.map(ad => ad.id)); // Delete using the actual ad IDs
         
         if (error) throw error;
         
@@ -70,7 +71,7 @@ export default function AdsManagement() {
             status: action === 'pause' ? 'paused' : 'active',
             pause_reason: action === 'pause' ? 'manual' : null
           })
-          .neq('id', '0');
+          .in('id', ads.map(ad => ad.id)); // Update using the actual ad IDs
         
         if (error) throw error;
         
