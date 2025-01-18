@@ -24,43 +24,40 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
     setIsDeleting(true);
     try {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) throw sessionError;
-      
-      if (!sessionData.session) {
-        throw new Error("You must be logged in to delete ads");
+      // First, get the current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        throw new Error("Failed to get session");
       }
 
-      // Get a fresh session
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-      if (refreshError) throw refreshError;
-      
-      if (!refreshData.session) {
-        throw new Error("Failed to refresh session");
+      if (!session) {
+        throw new Error("No active session found");
       }
 
-      // Set the fresh access token
-      supabase.auth.setSession(refreshData.session);
-
-      // Attempt delete with fresh session
+      // Perform the delete operation with the current session
       const { error: deleteError } = await supabase
         .from('ads')
         .delete()
-        .eq('id', id);
-      
-      if (deleteError) throw deleteError;
-      
+        .eq('id', id)
+        .single();
+
+      if (deleteError) {
+        console.error("Delete error:", deleteError);
+        throw deleteError;
+      }
+
       toast({
         title: "Success",
         description: "Ad deleted successfully",
       });
       onUpdate();
     } catch (error: any) {
-      console.error("Delete error:", error);
+      console.error("Delete operation failed:", error);
       
       let errorMessage = "Failed to delete ad. Please try again.";
-      if (error.message.includes("JWT")) {
-        errorMessage = "Your session has expired. Please log in again.";
+      if (error.message.includes("No active session")) {
+        errorMessage = "Please log in again to delete ads.";
       } else if (error.message.includes("permission")) {
         errorMessage = "You don't have permission to delete this ad.";
       }
