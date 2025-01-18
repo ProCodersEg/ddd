@@ -33,11 +33,9 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
       status: ad?.status || "active",
       pause_reason: ad?.pause_reason || null,
       max_clicks: ad?.max_clicks || undefined,
-      max_impressions: ad?.max_impressions || undefined,
       target_audience: ad?.target_audience || "All",
       frequency_cap: ad?.frequency_cap || 3,
       clicks: ad?.clicks || 0,
-      impressions: ad?.impressions || 0,
     },
   });
 
@@ -210,4 +208,3 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
       </form>
     </Form>
   );
-}

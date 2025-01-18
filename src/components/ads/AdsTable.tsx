@@ -28,7 +28,6 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
           if (ad.status === 'paused') {
             const shouldReactivate = (
               (!ad.max_clicks || ad.clicks < ad.max_clicks) &&
-              (!ad.max_impressions || ad.impressions < ad.max_impressions) &&
               ad.pause_reason === 'limits' // Only reactivate if paused due to limits
             );
             
@@ -173,4 +172,3 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
       </Sheet>
     </>
   );
-}
