@@ -45,7 +45,7 @@ export function AdHistory() {
       const { error } = await supabase
         .from('ad_history')
         .delete()
-        .gte('created_at', '2000-01-01');
+        .not('id', 'is', null); // This deletes all records where id is not null (i.e., all records)
 
       if (error) throw error;
 

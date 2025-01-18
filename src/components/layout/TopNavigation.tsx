@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import {
   DropdownMenu,
@@ -10,7 +10,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { cn } from "@/lib/utils";
 
 interface Notification {
   id: string;
@@ -23,7 +22,6 @@ interface Notification {
 }
 
 export function TopNavigation() {
-  const location = useLocation();
   const { data: notifications } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
@@ -47,34 +45,17 @@ export function TopNavigation() {
   };
 
   return (
-    <nav className="bg-white border-b h-16 flex items-center px-6 justify-between">
+    <nav className="bg-gradient-to-r from-blue-600 to-blue-800 h-16 flex items-center px-6 justify-between">
       <div className="flex items-center space-x-4">
-        <Link 
-          to="/dashboard" 
-          className={cn(
-            "px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors",
-            "bg-gradient-to-r hover:from-blue-50 hover:to-blue-100",
-            location.pathname === '/dashboard' && "text-blue-600 font-medium"
-          )}
-        >
-          Dashboard
-        </Link>
-        <Link 
-          to="/ads" 
-          className={cn(
-            "px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors",
-            "bg-gradient-to-r hover:from-blue-50 hover:to-blue-100",
-            location.pathname === '/ads' && "text-blue-600 font-medium"
-          )}
-        >
-          Ads
-        </Link>
+        <Link to="/" className="text-white">Home</Link>
+        <Link to="/ads" className="text-white">Ads</Link>
+        <Link to="/analytics" className="text-white">Analytics</Link>
       </div>
 
       <div className="flex items-center gap-4">
         <DropdownMenu>
           <DropdownMenuTrigger className="relative">
-            <Bell className="h-6 w-6 text-gray-600 hover:text-gray-900 transition-colors bg-gradient-to-br from-gray-500 to-gray-600 [--tw-gradient-text] bg-clip-text" />
+            <Bell className="h-6 w-6 text-white" />
             {unreadCount > 0 && (
               <Badge 
                 variant="destructive" 
@@ -115,12 +96,9 @@ export function TopNavigation() {
             )}
           </DropdownMenuContent>
         </DropdownMenu>
-        <Link 
-          to="/profile" 
-          className="text-gray-600 hover:text-gray-900 transition-colors px-4 py-2 bg-gradient-to-r hover:from-blue-50 hover:to-blue-100"
-        >
-          Profile
-        </Link>
+        <div className="relative">
+          <Link to="/profile" className="text-white">Profile</Link>
+        </div>
       </div>
     </nav>
   );
