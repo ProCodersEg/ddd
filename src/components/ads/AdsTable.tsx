@@ -25,17 +25,24 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
     setIsDeleting(true);
     try {
       // First verify the session
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      
       if (!session) {
         throw new Error("You must be logged in to delete ads");
       }
 
-      const { error } = await supabase
+      // Ensure we have a fresh auth token
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) throw refreshError;
+
+      // Attempt to delete with fresh session
+      const { error: deleteError } = await supabase
         .from('ads')
         .delete()
         .eq('id', id);
       
-      if (error) throw error;
+      if (deleteError) throw deleteError;
       
       toast({
         title: "Success",
@@ -44,9 +51,18 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
       onUpdate();
     } catch (error: any) {
       console.error("Delete error:", error);
+      
+      // Handle specific error cases
+      let errorMessage = "Failed to delete ad. Please try again.";
+      if (error.message.includes("JWT")) {
+        errorMessage = "Your session has expired. Please log in again.";
+      } else if (error.message.includes("permission")) {
+        errorMessage = "You don't have permission to delete this ad.";
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to delete ad. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
