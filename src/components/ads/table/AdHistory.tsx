@@ -17,11 +17,6 @@ interface AdHistoryEntry {
   created_at: string;
 }
 
-interface DeleteAllHistoryResponse {
-  success: boolean;
-  deleted_count: number;
-}
-
 export function AdHistory() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -29,7 +24,6 @@ export function AdHistory() {
   const { data: history, isLoading } = useQuery({
     queryKey: ['adHistory'],
     queryFn: async () => {
-      console.log('Fetching history data...');
       const { data, error } = await supabase
         .from('ad_history')
         .select('*')
@@ -39,7 +33,6 @@ export function AdHistory() {
         console.error('Error fetching ad history:', error);
         throw error;
       }
-      console.log('Fetched history data:', data);
       return data as AdHistoryEntry[];
     },
   });
@@ -49,31 +42,23 @@ export function AdHistory() {
       const confirmed = window.confirm("Are you sure you want to delete all history entries? This action cannot be undone.");
       if (!confirmed) return;
 
-      console.log('Starting deletion of all history entries');
+      const { error } = await supabase
+        .from('ad_history')
+        .delete()
+        .gte('created_at', '2000-01-01');
 
-      const { data, error } = await supabase
-        .rpc('delete_all_history');
+      if (error) throw error;
 
-      if (error) {
-        console.error('Error deleting history:', error);
-        throw error;
-      }
-
-      const response = data as DeleteAllHistoryResponse;
-      console.log('Delete operation response:', response);
-
-      // Force immediate cache invalidation and refetch
-      await queryClient.invalidateQueries({ queryKey: ['adHistory'] });
-      
+      queryClient.invalidateQueries({ queryKey: ['adHistory'] });
       toast({
         title: "Success",
-        description: `Successfully deleted ${response.deleted_count} history entries`,
+        description: "All history entries have been deleted",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting history:', error);
       toast({
         title: "Error",
-        description: "Failed to delete history entries. Please try again.",
+        description: "Failed to delete history entries",
         variant: "destructive",
       });
     }
