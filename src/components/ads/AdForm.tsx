@@ -31,6 +31,7 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
       redirect_url: ad?.redirect_url || "",
       start_date: ad?.start_date || new Date().toISOString().slice(0, 16),
       status: ad?.status || "active",
+      pause_reason: ad?.pause_reason || null,
       max_clicks: ad?.max_clicks || undefined,
       max_impressions: ad?.max_impressions || undefined,
       target_audience: ad?.target_audience || "All",
@@ -43,7 +44,6 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
   const onSubmit = async (values: any) => {
     setIsSubmitting(true);
     try {
-      // First, verify the session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) {
         console.error("Session error:", sessionError);
@@ -54,10 +54,16 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
         throw new Error("No active session found");
       }
 
+      // Set pause_reason when status changes to paused
+      const formData = {
+        ...values,
+        pause_reason: values.status === 'paused' ? 'manual' : null,
+      };
+
       if (ad) {
         const { error } = await supabase
           .from('ads')
-          .update(values)
+          .update(formData)
           .eq('id', ad.id)
           .select()
           .single();
@@ -69,7 +75,7 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
       } else {
         const { error } = await supabase
           .from('ads')
-          .insert([values])
+          .insert([formData])
           .select()
           .single();
         
