@@ -15,7 +15,7 @@ public class AdRotationManager {
             throw new IllegalArgumentException("BannerAdView cannot be null");
         }
         this.bannerAdView = bannerAdView;
-        this.adApiClient = new AdApiClient(bannerAdView.getContext());
+        this.adApiClient = new AdApiClient();
         loadAds();
     }
 
@@ -45,13 +45,13 @@ public class AdRotationManager {
                             ad.setImpressions(adJson.optInt("impressions", 0));
                             ad.setMaxClicks(adJson.has("max_clicks") ? adJson.getInt("max_clicks") : null);
                             ad.setMaxImpressions(adJson.has("max_impressions") ? adJson.getInt("max_impressions") : null);
-
+                            
                             if (shouldBeActive(ad)) {
                                 adsList.add(ad);
                             }
                         }
                     }
-
+                    
                     handler.post(() -> {
                         if (!adsList.isEmpty() && !isPaused) {
                             startRotation();
@@ -75,10 +75,10 @@ public class AdRotationManager {
 
     private boolean shouldBeActive(Ad ad) {
         if (ad == null) return false;
-
+        
         boolean withinClickLimit = ad.getMaxClicks() == null || ad.getClicks() < ad.getMaxClicks();
         boolean withinImpressionLimit = ad.getMaxImpressions() == null || ad.getImpressions() < ad.getMaxImpressions();
-
+        
         return withinClickLimit && withinImpressionLimit;
     }
 
@@ -124,7 +124,7 @@ public class AdRotationManager {
 
         // Increment index and handle wrap-around
         currentAdIndex = (currentAdIndex + 1) % adsList.size();
-
+        
         // Safely get the current ad
         Ad currentAd = null;
         try {
