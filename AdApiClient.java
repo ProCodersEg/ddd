@@ -63,11 +63,12 @@ public class AdApiClient {
         MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
         RequestBody body = RequestBody.create(mediaType, jsonBody.toString());
 
+        // Changed URL construction to use single quotes for the eq operator
         Request request = new Request.Builder()
                 .url(BASE_URL + "ads?id=eq." + adId)
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
-                .addHeader("Content-Type", "application/merge-patch+json")
+                .addHeader("Content-Type", "application/json")
                 .addHeader("Prefer", "return=minimal")
                 .patch(body)
                 .build();
@@ -113,11 +114,12 @@ public class AdApiClient {
         MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
         RequestBody body = RequestBody.create(mediaType, jsonBody.toString());
 
+        // Changed URL construction to use single quotes for the eq operator
         Request request = new Request.Builder()
                 .url(BASE_URL + "ads?id=eq." + adId)
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
-                .addHeader("Content-Type", "application/merge-patch+json")
+                .addHeader("Content-Type", "application/json")
                 .addHeader("Prefer", "return=minimal")
                 .patch(body)
                 .build();
