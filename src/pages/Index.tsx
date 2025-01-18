@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { ChartContainer } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, Tooltip, Legend } from "recharts";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -11,6 +11,7 @@ import { AdHistory } from "@/components/ads/table/AdHistory";
 
 export default function Index() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [stats, setStats] = useState({
     activeBannerAds: 0,
     pausedBannerAds: 0,
@@ -18,6 +19,74 @@ export default function Index() {
     pausedInterstitialAds: 0,
     totalClicks: 0,
   });
+
+  // Set up real-time subscription for ad updates
+  useEffect(() => {
+    const subscription = supabase
+      .channel('ads-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ads'
+        },
+        (payload) => {
+          console.log('Real-time update received:', payload);
+          // Invalidate and refetch queries when changes occur
+          queryClient.invalidateQueries({ queryKey: ['ads'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [queryClient]);
+
+  // Set up periodic check for ads that need to be paused
+  useEffect(() => {
+    const checkAdLimits = async () => {
+      const { data: activeAds, error } = await supabase
+        .from('ads')
+        .select('*')
+        .eq('status', 'active');
+
+      if (error) {
+        console.error('Error checking ad limits:', error);
+        return;
+      }
+
+      for (const ad of activeAds) {
+        if (ad.max_clicks && ad.clicks >= ad.max_clicks) {
+          const { error: updateError } = await supabase
+            .from('ads')
+            .update({ 
+              status: 'paused',
+              pause_reason: 'limits'
+            })
+            .eq('id', ad.id);
+
+          if (updateError) {
+            console.error('Error updating ad status:', updateError);
+          } else {
+            console.log(`Ad ${ad.id} paused due to reaching click limit`);
+            queryClient.invalidateQueries({ queryKey: ['ads'] });
+            toast({
+              title: "Ad Status Updated",
+              description: `Ad "${ad.title}" has been paused due to reaching click limit`,
+            });
+          }
+        }
+      }
+    };
+
+    // Check immediately and then every 5 seconds
+    checkAdLimits();
+    const interval = setInterval(checkAdLimits, 5000);
+
+    return () => clearInterval(interval);
+  }, [queryClient, toast]);
 
   const { data: ads, isLoading } = useQuery({
     queryKey: ['ads'],
