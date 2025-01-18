@@ -12,7 +12,10 @@ const formSchema = z.object({
   description: z.string().optional(),
   image_url: z.string().url("Must be a valid URL"),
   redirect_url: z.string().url("Must be a valid URL").optional(),
-  start_date: z.string().optional(),
+  start_date: z.string().transform((val) => {
+    if (!val) return new Date().toISOString(); // Default to current date if empty
+    return new Date(val).toISOString(); // Convert to ISO string format
+  }),
   max_clicks: z.number().optional(),
   clicks: z.number().optional(),
 });
@@ -25,12 +28,15 @@ interface AdFormProps {
 export function AdForm({ ad, onSuccess }: AdFormProps) {
   const { toast } = useToast();
   const form = useForm({
-    defaultValues: ad || {
+    defaultValues: {
+      ...ad,
+      start_date: ad?.start_date ? new Date(ad.start_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+    } || {
       title: "",
       description: "",
       image_url: "",
       redirect_url: "",
-      start_date: "",
+      start_date: new Date().toISOString().slice(0, 16),
       max_clicks: undefined,
       clicks: 0,
     },
@@ -38,11 +44,16 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      const formattedValues = {
+        ...values,
+        start_date: new Date(values.start_date).toISOString(),
+      };
+
       if (ad) {
         // Update existing ad
         const { error: updateError } = await supabase
           .from('ads')
-          .update(values)
+          .update(formattedValues)
           .eq('id', ad.id);
 
         if (updateError) throw updateError;
@@ -60,7 +71,7 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
         // Create new ad
         const { data: newAd, error: createError } = await supabase
           .from('ads')
-          .insert(values)
+          .insert(formattedValues)
           .select()
           .single();
 
@@ -92,7 +103,10 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
 
   useEffect(() => {
     if (ad) {
-      form.reset(ad);
+      form.reset({
+        ...ad,
+        start_date: ad.start_date ? new Date(ad.start_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+      });
     }
   }, [ad, form]);
 
@@ -149,7 +163,11 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Start Date</FormLabel>
-              <Input type="datetime-local" {...field} />
+              <Input 
+                type="datetime-local" 
+                {...field} 
+                value={field.value ? new Date(field.value).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)}
+              />
               <FormMessage />
             </FormItem>
           )}
@@ -160,7 +178,12 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Maximum Clicks</FormLabel>
-              <Input type="number" placeholder="Unlimited if empty" {...field} />
+              <Input 
+                type="number" 
+                placeholder="Unlimited if empty" 
+                {...field} 
+                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+              />
               <FormMessage />
             </FormItem>
           )}
@@ -171,7 +194,11 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Current Clicks</FormLabel>
-              <Input type="number" {...field} />
+              <Input 
+                type="number" 
+                {...field} 
+                onChange={(e) => field.onChange(Number(e.target.value))}
+              />
               <FormMessage />
             </FormItem>
           )}
