@@ -46,16 +46,16 @@ public class AdApiClient {
         });
     }
 
-    public void recordAdClick(String adId, int clicks) {
+    public void recordAdClick(String adId, int currentClicks) {
         if (adId == null || adId.isEmpty()) {
             Log.e("AdApiClient", "Invalid ad ID provided");
             return;
         }
 
+        // Create JSON object with the incremented click count
         JSONObject jsonBody = new JSONObject();
         try {
-            // Send the actual updated click count instead of the increment operation
-            jsonBody.put("clicks", clicks + 1);
+            jsonBody.put("clicks", currentClicks + 1);
         } catch (JSONException e) {
             Log.e("AdApiClient", "Error creating JSON body", e);
             return;
@@ -64,8 +64,11 @@ public class AdApiClient {
         MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
         RequestBody body = RequestBody.create(mediaType, jsonBody.toString());
 
+        String url = BASE_URL + "ads?id=eq." + adId;
+        Log.d("AdApiClient", "Sending PATCH request to: " + url + " with clicks: " + (currentClicks + 1));
+
         Request request = new Request.Builder()
-                .url(BASE_URL + "ads?id=eq." + adId)
+                .url(url)
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/json")
@@ -86,7 +89,9 @@ public class AdApiClient {
                         String errorBody = response.body() != null ? response.body().string() : "No error details";
                         Log.e("AdApiClient", "Error recording click: " + response.code() + ", " + errorBody);
                     } else {
-                        Log.d("AdApiClient", "Successfully recorded click for ad: " + adId + " - Status code: " + response.code());
+                        Log.d("AdApiClient", "Successfully recorded click for ad: " + adId + 
+                              " - Status code: " + response.code() + 
+                              " - New click count: " + (currentClicks + 1));
                     }
                 } catch (IOException e) {
                     Log.e("AdApiClient", "Error reading response", e);
