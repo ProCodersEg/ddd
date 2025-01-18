@@ -57,6 +57,18 @@ export function HistoryList({ filter }: HistoryListProps) {
 
   const totalPages = Math.ceil((historyData?.total || 0) / ITEMS_PER_PAGE);
 
+  const handlePrevious = () => {
+    if (page > 1) {
+      setPage(p => p - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (page < totalPages) {
+      setPage(p => p + 1);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
@@ -76,8 +88,8 @@ export function HistoryList({ filter }: HistoryListProps) {
           <PaginationContent>
             <PaginationItem>
               <PaginationPrevious
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
+                onClick={handlePrevious}
+                className={page === 1 ? 'pointer-events-none opacity-50' : ''}
               />
             </PaginationItem>
 
@@ -94,8 +106,8 @@ export function HistoryList({ filter }: HistoryListProps) {
 
             <PaginationItem>
               <PaginationNext
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
+                onClick={handleNext}
+                className={page === totalPages ? 'pointer-events-none opacity-50' : ''}
               />
             </PaginationItem>
           </PaginationContent>
