@@ -40,23 +40,39 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
+  -- For INSERT operations
   IF TG_OP = 'INSERT' THEN
     INSERT INTO ad_history (ad_id, action_type, ad_title, ad_description, ad_image, clicks)
     VALUES (NEW.id, 'added', NEW.title, NEW.description, NEW.image_url, NEW.clicks);
+    
+  -- For UPDATE operations
   ELSIF TG_OP = 'UPDATE' THEN
-    INSERT INTO ad_history (ad_id, action_type, ad_title, ad_description, ad_image, clicks)
-    VALUES (NEW.id, 'updated', NEW.title, NEW.description, NEW.image_url, NEW.clicks);
+    -- Only log update if something other than clicks changed
+    IF NEW.title != OLD.title OR 
+       NEW.description != OLD.description OR 
+       NEW.image_url != OLD.image_url OR
+       NEW.redirect_url != OLD.redirect_url OR
+       NEW.status != OLD.status OR
+       NEW.max_clicks != OLD.max_clicks THEN
+      
+      INSERT INTO ad_history (ad_id, action_type, ad_title, ad_description, ad_image, clicks)
+      VALUES (NEW.id, 'updated', NEW.title, NEW.description, NEW.image_url, NEW.clicks);
+    END IF;
+    
+  -- For DELETE operations
   ELSIF TG_OP = 'DELETE' THEN
-    -- For deleted ads, we still want to keep the history but with ad_id set to NULL
     INSERT INTO ad_history (ad_id, action_type, ad_title, ad_description, ad_image, clicks)
-    VALUES (NULL, 'deleted', OLD.title, OLD.description, OLD.image_url, OLD.clicks);
+    VALUES (OLD.id, 'deleted', OLD.title, OLD.description, OLD.image_url, OLD.clicks);
   END IF;
-  RETURN NEW;
+  
+  RETURN COALESCE(NEW, OLD);
 END;
 $$;
 
--- Create triggers
+-- Drop existing trigger if exists
 DROP TRIGGER IF EXISTS ad_changes_trigger ON ads;
+
+-- Create trigger
 CREATE TRIGGER ad_changes_trigger
   AFTER INSERT OR UPDATE OR DELETE ON ads
   FOR EACH ROW
