@@ -9,7 +9,6 @@ import { checkAndUpdateAdStatus } from "@/lib/api/ads";
 import { AdStatusBadge } from "./table/AdStatusBadge";
 import { AdLimitsDisplay } from "./table/AdLimitsDisplay";
 import { AdActions } from "./table/AdActions";
-import { AdHistory } from "./table/AdHistory";
 
 interface AdsTableProps {
   ads: Ad[];
@@ -185,8 +184,6 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
           )}
         </SheetContent>
       </Sheet>
-
-      <AdHistory />
     </>
   );
 }

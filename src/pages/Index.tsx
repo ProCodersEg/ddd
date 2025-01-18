@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { Ad } from "@/types/ads";
 import { Activity, TrendingUp, Users } from "lucide-react";
+import { AdHistory } from "@/components/ads/table/AdHistory";
 
 export default function Index() {
   const { toast } = useToast();
@@ -196,6 +197,11 @@ export default function Index() {
             </ChartContainer>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Ad History Section */}
+      <div className="mt-8">
+        <AdHistory />
       </div>
     </div>
   );
