@@ -17,6 +17,14 @@ using (
   AND auth.role() = 'authenticated'
 );
 
+-- Create policy to allow authenticated users to delete their uploads
+create policy "Allow authenticated deletes"
+on storage.objects for delete
+using (
+  bucket_id = 'ad-images'
+  AND auth.role() = 'authenticated'
+);
+
 -- Create policy to allow public read access to ad images
 create policy "Public read access"
 on storage.objects for select

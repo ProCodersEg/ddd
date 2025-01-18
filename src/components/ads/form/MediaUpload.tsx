@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { FormControl, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MediaUploadProps {
   value: string;
@@ -11,11 +12,21 @@ interface MediaUploadProps {
 
 export function MediaUpload({ value, onChange }: MediaUploadProps) {
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!isAuthenticated) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to upload images",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsUploading(true);
     try {
@@ -38,9 +49,10 @@ export function MediaUpload({ value, onChange }: MediaUploadProps) {
         description: "Image uploaded successfully",
       });
     } catch (error: any) {
+      console.error('Upload error:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to upload image",
         variant: "destructive",
       });
     } finally {
@@ -57,7 +69,7 @@ export function MediaUpload({ value, onChange }: MediaUploadProps) {
             type="file"
             accept="image/*"
             onChange={handleImageUpload}
-            disabled={isUploading}
+            disabled={isUploading || !isAuthenticated}
           />
           {value && (
             <img 
