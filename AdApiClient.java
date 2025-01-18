@@ -57,6 +57,7 @@ public class AdApiClient {
                 .url(BASE_URL + "ads?id=eq." + adId + "&select=clicks")
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
+                .addHeader("Content-Type", "application/json")
                 .get()
                 .build();
 
@@ -75,7 +76,8 @@ public class AdApiClient {
                         if (jsonArray.length() > 0) {
                             JSONObject ad = jsonArray.getJSONObject(0);
                             int dbClicks = ad.getInt("clicks");
-                            updateClickCount(adId, dbClicks);
+                            Log.d("AdApiClient", "Current clicks in DB: " + dbClicks);
+                            incrementClickCount(adId, dbClicks);
                         }
                     }
                 } catch (JSONException e) {
@@ -87,34 +89,36 @@ public class AdApiClient {
         });
     }
 
-    private void updateClickCount(String adId, int currentClicks) {
+    private void incrementClickCount(String adId, int currentClicks) {
+        // Use RPC call to increment clicks
+        MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
+        String rpcUrl = "https://oxhcswfkvtxfpiilaiuo.supabase.co/rest/v1/rpc/increment_ad_clicks";
+        
         JSONObject jsonBody = new JSONObject();
         try {
-            jsonBody.put("clicks", currentClicks + 1);
+            jsonBody.put("ad_id", adId);
         } catch (JSONException e) {
             Log.e("AdApiClient", "Error creating JSON body", e);
             return;
         }
 
-        MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
         RequestBody body = RequestBody.create(mediaType, jsonBody.toString());
-
-        String url = BASE_URL + "ads?id=eq." + adId;
-        Log.d("AdApiClient", "Sending PATCH request to: " + url + " with clicks: " + (currentClicks + 1));
-
+        
         Request request = new Request.Builder()
-                .url(url)
+                .url(rpcUrl)
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Prefer", "return=representation")
-                .patch(body)
+                .post(body)  // RPC calls use POST
                 .build();
+
+        Log.d("AdApiClient", "Sending RPC request to increment clicks for ad: " + adId);
 
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, IOException e) {
-                Log.e("AdApiClient", "Failed to update click count", e);
+                Log.e("AdApiClient", "Failed to increment click count", e);
             }
 
             @Override
@@ -122,14 +126,13 @@ public class AdApiClient {
                 try {
                     if (!response.isSuccessful()) {
                         String errorBody = response.body() != null ? response.body().string() : "No error details";
-                        Log.e("AdApiClient", "Error updating clicks: " + response.code() + ", " + errorBody);
+                        Log.e("AdApiClient", "Error incrementing clicks: " + response.code() + ", " + errorBody);
                     } else {
-                        Log.d("AdApiClient", "Successfully updated click count for ad: " + adId + 
-                              " - Status code: " + response.code() + 
-                              " - New click count: " + (currentClicks + 1));
+                        Log.d("AdApiClient", "Successfully incremented click count for ad: " + adId + 
+                              " - Status code: " + response.code());
                         
                         // Verify the update
-                        verifyClickUpdate(adId, currentClicks + 1);
+                        verifyClickUpdate(adId);
                     }
                 } catch (IOException e) {
                     Log.e("AdApiClient", "Error reading response", e);
@@ -140,11 +143,12 @@ public class AdApiClient {
         });
     }
 
-    private void verifyClickUpdate(String adId, int expectedClicks) {
+    private void verifyClickUpdate(String adId) {
         Request request = new Request.Builder()
                 .url(BASE_URL + "ads?id=eq." + adId + "&select=clicks")
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
+                .addHeader("Content-Type", "application/json")
                 .get()
                 .build();
 
