@@ -29,46 +29,34 @@ export async function fetchActiveInterstitialAds() {
 
 // Record ad click
 export async function recordAdClick(adId: string) {
-  // First, update the clicks count in the ads table using increment
-  const { error: updateError } = await supabase
-    .from('ads')
-    .update({ clicks: supabase.rpc('increment', { value: 1, column: 'clicks' }) })
-    .eq('id', adId);
-  
-  if (updateError) {
-    console.error('Error updating clicks:', updateError);
-    throw updateError;
-  }
-
-  // Then call the RPC function for any additional processing
-  const { error: rpcError } = await supabase
-    .rpc('increment_ad_clicks', { ad_id: adId });
-  
-  if (rpcError) {
-    console.error('Error in RPC call:', rpcError);
-    throw rpcError;
+  try {
+    // Call the RPC function to increment clicks
+    const { error } = await supabase
+      .rpc('increment_ad_clicks', { ad_id: adId });
+    
+    if (error) {
+      console.error('Error recording click:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Failed to record click:', error);
+    throw error;
   }
 }
 
 // Record ad impression
 export async function recordAdImpression(adId: string) {
-  // First, update the impressions count in the ads table using increment
-  const { error: updateError } = await supabase
-    .from('ads')
-    .update({ impressions: supabase.rpc('increment', { value: 1, column: 'impressions' }) })
-    .eq('id', adId);
-  
-  if (updateError) {
-    console.error('Error updating impressions:', updateError);
-    throw updateError;
-  }
-
-  // Then call the RPC function for any additional processing
-  const { error: rpcError } = await supabase
-    .rpc('increment_ad_impressions', { ad_id: adId });
-  
-  if (rpcError) {
-    console.error('Error in RPC call:', rpcError);
-    throw rpcError;
+  try {
+    // Call the RPC function to increment impressions
+    const { error } = await supabase
+      .rpc('increment_ad_impressions', { ad_id: adId });
+    
+    if (error) {
+      console.error('Error recording impression:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Failed to record impression:', error);
+    throw error;
   }
 }
