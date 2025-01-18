@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
 interface Notification {
   id: string;
@@ -45,25 +46,51 @@ export function TopNavigation() {
   };
 
   return (
-    <nav className="bg-gradient-to-r from-blue-600 to-blue-800 h-16 flex items-center px-6 justify-between">
-      <div className="flex items-center space-x-4">
-        <Link to="/" className="text-white">Home</Link>
-        <Link to="/ads" className="text-white">Ads</Link>
-        <Link to="/analytics" className="text-white">Analytics</Link>
+    <nav className="h-16 flex items-center justify-between px-2">
+      <div className="flex items-center space-x-6">
+        <Link 
+          to="/" 
+          className={cn(
+            "text-sm font-medium transition-colors hover:text-primary",
+            "text-muted-foreground px-2 py-1.5 rounded-md hover:bg-accent"
+          )}
+        >
+          Home
+        </Link>
+        <Link 
+          to="/ads" 
+          className={cn(
+            "text-sm font-medium transition-colors hover:text-primary",
+            "text-muted-foreground px-2 py-1.5 rounded-md hover:bg-accent"
+          )}
+        >
+          Ads
+        </Link>
+        <Link 
+          to="/analytics" 
+          className={cn(
+            "text-sm font-medium transition-colors hover:text-primary",
+            "text-muted-foreground px-2 py-1.5 rounded-md hover:bg-accent"
+          )}
+        >
+          Analytics
+        </Link>
       </div>
 
       <div className="flex items-center gap-4">
         <DropdownMenu>
           <DropdownMenuTrigger className="relative">
-            <Bell className="h-6 w-6 text-white" />
-            {unreadCount > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
-              >
-                {unreadCount}
-              </Badge>
-            )}
+            <div className="p-2 rounded-md hover:bg-accent transition-colors">
+              <Bell className="h-5 w-5 text-muted-foreground" />
+              {unreadCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]"
+                >
+                  {unreadCount}
+                </Badge>
+              )}
+            </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
             {notifications?.map((notification) => (
@@ -79,25 +106,33 @@ export function TopNavigation() {
                 />
                 <div className="flex-1">
                   <p className="font-medium text-sm">{notification.ad_title}</p>
-                  <p className="text-sm text-gray-500">{notification.message}</p>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-sm text-muted-foreground">{notification.message}</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">
                     {new Date(notification.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 {!notification.read && (
-                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1" />
+                  <div className="w-2 h-2 rounded-full bg-primary mt-1" />
                 )}
               </DropdownMenuItem>
             ))}
             {(!notifications || notifications.length === 0) && (
-              <DropdownMenuItem disabled>
+              <DropdownMenuItem disabled className="text-center text-muted-foreground">
                 No notifications
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
         <div className="relative">
-          <Link to="/profile" className="text-white">Profile</Link>
+          <Link 
+            to="/profile" 
+            className={cn(
+              "text-sm font-medium transition-colors hover:text-primary",
+              "text-muted-foreground px-2 py-1.5 rounded-md hover:bg-accent"
+            )}
+          >
+            Profile
+          </Link>
         </div>
       </div>
     </nav>
