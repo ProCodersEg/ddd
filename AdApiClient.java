@@ -19,7 +19,7 @@ public class AdApiClient {
 
     public void fetchInterstitialAds(AdCallback callback) {
         Request request = new Request.Builder()
-                .url(BASE_URL + "ads?type=eq.interstitial&status=eq.active")
+                .url(BASE_URL + "ads?type=eq.interstitial&status=eq.active&select=*,clicks,max_clicks")
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/json")
@@ -36,7 +36,30 @@ public class AdApiClient {
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 if (response.isSuccessful()) {
                     String responseBody = response.body() != null ? response.body().string() : null;
-                    callback.onSuccess(responseBody);
+                    if (responseBody != null) {
+                        try {
+                            JSONArray jsonArray = new JSONArray(responseBody);
+                            JSONArray filteredAds = new JSONArray();
+                            
+                            // Filter out ads that have reached their click limits
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                JSONObject ad = jsonArray.getJSONObject(i);
+                                int clicks = ad.optInt("clicks", 0);
+                                Integer maxClicks = ad.isNull("max_clicks") ? null : ad.getInt("max_clicks");
+                                
+                                if (maxClicks == null || clicks < maxClicks) {
+                                    filteredAds.put(ad);
+                                }
+                            }
+                            
+                            callback.onSuccess(filteredAds.toString());
+                        } catch (JSONException e) {
+                            Log.e("AdApiClient", "Error parsing JSON response", e);
+                            callback.onError("Error parsing response");
+                        }
+                    } else {
+                        callback.onError("Empty response body");
+                    }
                 } else {
                     String errorBody = response.body() != null ? response.body().string() : "Unknown error";
                     Log.e("AdApiClient", "Error fetching interstitial ads: " + response.code() + " - " + errorBody);
