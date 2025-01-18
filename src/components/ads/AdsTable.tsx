@@ -106,11 +106,11 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
     setIsDeleting(true);
     try {
-      // Create history entry before deletion
+      // First create history entry
       await createHistoryEntry(id, 'deleted');
-      console.log('History entry created, proceeding with ad deletion');
+      console.log('History entry created successfully');
 
-      // Delete the ad
+      // Then delete the ad
       const { error: deleteError } = await supabase
         .from('ads')
         .delete()
@@ -122,6 +122,8 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
       }
 
       console.log('Ad deleted successfully');
+      
+      // Finally show success message and update UI
       toast({
         title: "Success",
         description: "Ad deleted successfully",
@@ -142,8 +144,6 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
   const getTypeColor = (type: string) => {
     return type === 'banner' ? 'text-green-500' : 'text-blue-500';
   };
-
-  // ... keep existing code (render method)
 
   return (
     <>
