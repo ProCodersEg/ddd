@@ -106,11 +106,11 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
     setIsDeleting(true);
     try {
-      // First create history entry
+      // First create history entry for deletion
       await createHistoryEntry(id, 'deleted');
-      console.log('History entry created successfully');
+      console.log('Deletion history entry created successfully');
 
-      // Then delete the ad
+      // Then delete the ad (this will cascade delete related history entries)
       const { error: deleteError } = await supabase
         .from('ads')
         .delete()
@@ -123,7 +123,6 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
       console.log('Ad deleted successfully');
       
-      // Finally show success message and update UI
       toast({
         title: "Success",
         description: "Ad deleted successfully",
