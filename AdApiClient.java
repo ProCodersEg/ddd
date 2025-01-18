@@ -75,9 +75,9 @@ public class AdApiClient {
             return;
         }
 
-        // First, verify current clicks in database
+        // First, verify current clicks and status in database
         Request getRequest = new Request.Builder()
-                .url(BASE_URL + "ads?id=eq." + adId + "&select=clicks,status")
+                .url(BASE_URL + "ads?id=eq." + adId + "&select=clicks,status,max_clicks")
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/json")
@@ -99,14 +99,14 @@ public class AdApiClient {
                         if (jsonArray.length() > 0) {
                             JSONObject ad = jsonArray.getJSONObject(0);
                             String status = ad.getString("status");
+                            int dbClicks = ad.getInt("clicks");
+                            Integer maxClicks = ad.isNull("max_clicks") ? null : ad.getInt("max_clicks");
                             
-                            // Only increment clicks if ad is still active
-                            if ("active".equals(status)) {
-                                int dbClicks = ad.getInt("clicks");
-                                Log.d("AdApiClient", "Current clicks in DB: " + dbClicks);
-                                incrementClickCount(adId, dbClicks);
+                            // Only increment clicks if ad is still active and hasn't reached max clicks
+                            if ("active".equals(status) && (maxClicks == null || dbClicks < maxClicks)) {
+                                incrementClickCount(adId, dbClicks, maxClicks);
                             } else {
-                                Log.d("AdApiClient", "Ad is not active, skipping click increment");
+                                Log.d("AdApiClient", "Ad is not active or has reached max clicks, skipping click increment");
                             }
                         }
                     }
@@ -119,10 +119,10 @@ public class AdApiClient {
         });
     }
 
-    private void incrementClickCount(String adId, int currentClicks) {
+    private void incrementClickCount(String adId, int currentClicks, Integer maxClicks) {
         // Use RPC call to increment clicks
         MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
-        String rpcUrl = "https://oxhcswfkvtxfpiilaiuo.supabase.co/rest/v1/rpc/increment_ad_clicks";
+        String rpcUrl = BASE_URL + "rpc/increment_ad_clicks";
         
         JSONObject jsonBody = new JSONObject();
         try {
@@ -140,10 +140,8 @@ public class AdApiClient {
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Prefer", "return=representation")
-                .post(body)  // RPC calls use POST
+                .post(body)
                 .build();
-
-        Log.d("AdApiClient", "Sending RPC request to increment clicks for ad: " + adId);
 
         client.newCall(request).enqueue(new Callback() {
             @Override
@@ -154,45 +152,60 @@ public class AdApiClient {
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) {
                 try {
-                    if (!response.isSuccessful()) {
+                    if (response.isSuccessful()) {
+                        // Check if we need to pause the ad after incrementing
+                        if (maxClicks != null && currentClicks + 1 >= maxClicks) {
+                            pauseAd(adId);
+                        }
+                    } else {
                         String errorBody = response.body() != null ? response.body().string() : "No error details";
                         Log.e("AdApiClient", "Error incrementing clicks: " + response.code() + ", " + errorBody);
-                    } else {
-                        Log.d("AdApiClient", "Successfully incremented click count for ad: " + adId + 
-                              " - Status code: " + response.code());
-                        
-                        // Verify the update
-                        verifyClickUpdate(adId);
                     }
                 } catch (IOException e) {
                     Log.e("AdApiClient", "Error reading response", e);
                 } finally {
-                    response.close();
+                    if (response.body() != null) {
+                        response.body().close();
+                    }
                 }
             }
         });
     }
 
-    private void verifyClickUpdate(String adId) {
+    private void pauseAd(String adId) {
+        MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
+        JSONObject jsonBody = new JSONObject();
+        try {
+            jsonBody.put("status", "paused");
+            jsonBody.put("pause_reason", "limits");
+        } catch (JSONException e) {
+            Log.e("AdApiClient", "Error creating pause JSON body", e);
+            return;
+        }
+
+        RequestBody body = RequestBody.create(mediaType, jsonBody.toString());
+        
         Request request = new Request.Builder()
-                .url(BASE_URL + "ads?id=eq." + adId + "&select=clicks")
+                .url(BASE_URL + "ads?id=eq." + adId)
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/json")
-                .get()
+                .addHeader("Prefer", "return=representation")
+                .patch(body)
                 .build();
 
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, IOException e) {
-                Log.e("AdApiClient", "Failed to verify click update", e);
+                Log.e("AdApiClient", "Failed to pause ad", e);
             }
 
             @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (response.isSuccessful() && response.body() != null) {
-                    String responseBody = response.body().string();
-                    Log.d("AdApiClient", "Verification response: " + responseBody);
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
+                if (!response.isSuccessful()) {
+                    Log.e("AdApiClient", "Error pausing ad: " + response.code());
+                } else {
+                    Log.d("AdApiClient", "Successfully paused ad: " + adId);
                 }
                 response.close();
             }
