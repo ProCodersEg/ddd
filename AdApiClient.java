@@ -14,7 +14,6 @@ public class AdApiClient {
     }
 
     private String getApiKey() {
-        // For now, we'll use the hardcoded API key since it's a public anon key
         return API_KEY;
     }
 
@@ -69,7 +68,7 @@ public class AdApiClient {
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/merge-patch+json")
-                .addHeader("Prefer", "return=representation")
+                .addHeader("Prefer", "return=minimal")
                 .patch(body)
                 .build();
 
@@ -86,8 +85,7 @@ public class AdApiClient {
                         String errorBody = response.body() != null ? response.body().string() : "No error details";
                         Log.e("AdApiClient", "Error recording click: " + response.code() + ", " + errorBody);
                     } else {
-                        String responseBody = response.body() != null ? response.body().string() : "";
-                        Log.d("AdApiClient", "Successfully recorded click for ad: " + adId + " - Response: " + responseBody);
+                        Log.d("AdApiClient", "Successfully recorded click for ad: " + adId + " - Status code: " + response.code());
                     }
                 } catch (IOException e) {
                     Log.e("AdApiClient", "Error reading response", e);
@@ -120,7 +118,7 @@ public class AdApiClient {
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/merge-patch+json")
-                .addHeader("Prefer", "return=representation")
+                .addHeader("Prefer", "return=minimal")
                 .patch(body)
                 .build();
 
@@ -137,8 +135,7 @@ public class AdApiClient {
                         String errorBody = response.body() != null ? response.body().string() : "No error details";
                         Log.e("AdApiClient", "Error recording impression: " + response.code() + ", " + errorBody);
                     } else {
-                        String responseBody = response.body() != null ? response.body().string() : "";
-                        Log.d("AdApiClient", "Successfully recorded impression for ad: " + adId + " - Response: " + responseBody);
+                        Log.d("AdApiClient", "Successfully recorded impression for ad: " + adId + " - Status code: " + response.code());
                     }
                 } catch (IOException e) {
                     Log.e("AdApiClient", "Error reading response", e);
