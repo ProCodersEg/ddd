@@ -1,12 +1,12 @@
 public class AdRotationManager {
     private static final int MIN_DISPLAY_TIME = 5000; // 5 seconds
     private static final int MAX_DISPLAY_TIME = 15000; // 15 seconds
-    private List<Ad> adsList = new ArrayList<>();
-    private Random random = new Random();
-    private Handler handler = new Handler(Looper.getMainLooper());
-    private int currentAdIndex = 0;
-    private BannerAdView bannerAdView;
-    private AdApiClient adApiClient;
+    private final List<Ad> adsList = new ArrayList<>();
+    private final Random random = new Random();
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private int currentAdIndex = -1; // Start at -1 to handle first ad correctly
+    private final BannerAdView bannerAdView;
+    private final AdApiClient adApiClient;
     private Runnable rotationRunnable;
     private boolean isPaused = false;
 
@@ -87,6 +87,13 @@ public class AdRotationManager {
             handler.removeCallbacks(rotationRunnable);
         }
 
+        if (adsList.isEmpty()) {
+            Log.d("AdRotationManager", "No ads available to start rotation");
+            handler.post(() -> bannerAdView.setVisibility(View.GONE));
+            loadAds();
+            return;
+        }
+
         rotationRunnable = new Runnable() {
             @Override
             public void run() {
@@ -109,16 +116,39 @@ public class AdRotationManager {
 
     private void showNextAd() {
         if (adsList.isEmpty()) {
+            Log.d("AdRotationManager", "No ads available to show");
+            handler.post(() -> bannerAdView.setVisibility(View.GONE));
             loadAds();
             return;
         }
 
+        // Increment index and handle wrap-around
         currentAdIndex = (currentAdIndex + 1) % adsList.size();
-        Ad currentAd = adsList.get(currentAdIndex);
         
+        // Safely get the current ad
+        Ad currentAd = null;
+        try {
+            currentAd = adsList.get(currentAdIndex);
+        } catch (IndexOutOfBoundsException e) {
+            Log.e("AdRotationManager", "Invalid ad index: " + currentAdIndex, e);
+            loadAds();
+            return;
+        }
+
+        // Verify we have a valid ad
+        if (currentAd == null) {
+            Log.e("AdRotationManager", "Null ad encountered at index: " + currentAdIndex);
+            adsList.remove(currentAdIndex);
+            if (adsList.isEmpty()) {
+                handler.post(() -> bannerAdView.setVisibility(View.GONE));
+                loadAds();
+            }
+            return;
+        }
+
         // Update local impression count
         currentAd.setImpressions(currentAd.getImpressions() + 1);
-        
+
         // Check if ad should still be active after this impression
         if (!shouldBeActive(currentAd)) {
             adsList.remove(currentAdIndex);
@@ -128,7 +158,13 @@ public class AdRotationManager {
                 return;
             }
             currentAdIndex = currentAdIndex % adsList.size();
-            currentAd = adsList.get(currentAdIndex);
+            try {
+                currentAd = adsList.get(currentAdIndex);
+            } catch (IndexOutOfBoundsException e) {
+                Log.e("AdRotationManager", "Error getting next ad after removal", e);
+                loadAds();
+                return;
+            }
         }
 
         // Record impression with current count
@@ -136,33 +172,38 @@ public class AdRotationManager {
 
         final Ad finalAd = currentAd;
         handler.post(() -> {
-            bannerAdView.setVisibility(View.VISIBLE);
-            bannerAdView.setAd(finalAd);
-            
-            bannerAdView.setOnClickListener(v -> {
-                // Update local click count
-                finalAd.setClicks(finalAd.getClicks() + 1);
-                
-                // Record click with current count
-                adApiClient.recordAdClick(finalAd.getId(), finalAd.getClicks());
-                
-                // Check if ad should be removed after this click
-                if (!shouldBeActive(finalAd)) {
-                    adsList.remove(finalAd);
-                    if (adsList.isEmpty()) {
-                        bannerAdView.setVisibility(View.GONE);
-                        loadAds();
+            if (finalAd != null) {
+                bannerAdView.setVisibility(View.VISIBLE);
+                bannerAdView.setAd(finalAd);
+
+                bannerAdView.setOnClickListener(v -> {
+                    // Update local click count
+                    finalAd.setClicks(finalAd.getClicks() + 1);
+
+                    // Record click with current count
+                    adApiClient.recordAdClick(finalAd.getId(), finalAd.getClicks());
+
+                    // Check if ad should be removed after this click
+                    if (!shouldBeActive(finalAd)) {
+                        adsList.remove(finalAd);
+                        if (adsList.isEmpty()) {
+                            bannerAdView.setVisibility(View.GONE);
+                            loadAds();
+                        }
                     }
-                }
-                
-                // Open redirect URL
-                try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(finalAd.getRedirectUrl()));
-                    bannerAdView.getContext().startActivity(intent);
-                } catch (ActivityNotFoundException e) {
-                    Log.e("AdRotationManager", "Could not open URL: " + finalAd.getRedirectUrl(), e);
-                }
-            });
+
+                    // Open redirect URL
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(finalAd.getRedirectUrl()));
+                        bannerAdView.getContext().startActivity(intent);
+                    } catch (ActivityNotFoundException e) {
+                        Log.e("AdRotationManager", "Could not open URL: " + finalAd.getRedirectUrl(), e);
+                    }
+                });
+            } else {
+                Log.e("AdRotationManager", "Attempted to display null ad");
+                bannerAdView.setVisibility(View.GONE);
+            }
         });
     }
 
