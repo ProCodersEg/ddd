@@ -41,12 +41,15 @@ export function TopNavigation() {
       if (error) throw error;
       return data as Notification[];
     },
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 1000, // Poll every second as backup
   });
 
   // Set up real-time subscription for notifications
   useEffect(() => {
-    const subscription = supabase
-      .channel('notifications-channel')
+    const channel = supabase.channel('notifications-changes');
+    
+    const subscription = channel
       .on(
         'postgres_changes',
         {
@@ -54,15 +57,28 @@ export function TopNavigation() {
           schema: 'public',
           table: 'notifications'
         },
-        (payload) => {
+        async (payload) => {
           console.log('Real-time notification update:', payload);
+          
+          // Immediately fetch fresh notifications
+          const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .order('created_at', { ascending: false });
+            
+          if (!error && data) {
+            // Update cache immediately
+            queryClient.setQueryData(['notifications'], data);
+          }
+          
+          // Also invalidate to trigger a background refresh
           queryClient.invalidateQueries({ queryKey: ['notifications'] });
         }
       )
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      channel.unsubscribe();
     };
   }, [queryClient]);
 
