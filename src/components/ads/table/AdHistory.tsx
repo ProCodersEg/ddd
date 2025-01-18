@@ -1,7 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/lib/supabase";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface AdHistoryEntry {
   id: string;
@@ -15,6 +18,9 @@ interface AdHistoryEntry {
 }
 
 export function AdHistory() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const { data: history, isLoading } = useQuery({
     queryKey: ['adHistory'],
     queryFn: async () => {
@@ -30,6 +36,29 @@ export function AdHistory() {
       return data as AdHistoryEntry[];
     },
   });
+
+  const handleDeleteAllHistory = async () => {
+    try {
+      const { error } = await supabase
+        .from('ad_history')
+        .delete()
+        .neq('id', ''); // Delete all records
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['adHistory'] });
+      toast({
+        title: "Success",
+        description: "All history entries have been deleted",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete history entries",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getActionColor = (actionType: string) => {
     switch (actionType) {
@@ -59,8 +88,17 @@ export function AdHistory() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Ad History</CardTitle>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={handleDeleteAllHistory}
+          className="flex items-center gap-2"
+        >
+          <Trash2 className="h-4 w-4" />
+          Delete All History
+        </Button>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[400px]">
