@@ -24,6 +24,7 @@ export function AdHistory() {
   const { data: history, isLoading } = useQuery({
     queryKey: ['adHistory'],
     queryFn: async () => {
+      console.log('Fetching history data...');
       const { data, error } = await supabase
         .from('ad_history')
         .select('*')
@@ -45,11 +46,8 @@ export function AdHistory() {
 
       console.log('Starting deletion of all history entries');
 
-      // Delete all entries in a single operation
-      const { error } = await supabase
-        .from('ad_history')
-        .delete()
-        .not('id', 'is', null); // This ensures we delete all entries
+      // Execute RPC function to delete all history
+      const { error } = await supabase.rpc('delete_all_history');
 
       if (error) {
         console.error('Error deleting history:', error);
@@ -58,9 +56,9 @@ export function AdHistory() {
 
       console.log('Successfully deleted all history entries');
 
-      // Force refetch the data
-      await queryClient.invalidateQueries({ queryKey: ['adHistory'] });
-      await queryClient.refetchQueries({ queryKey: ['adHistory'] });
+      // Force immediate cache invalidation and refetch
+      queryClient.removeQueries({ queryKey: ['adHistory'] });
+      await queryClient.fetchQuery({ queryKey: ['adHistory'] });
       
       toast({
         title: "Success",
