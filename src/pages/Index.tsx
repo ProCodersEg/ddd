@@ -57,6 +57,44 @@ export default function Index() {
     }
   }, [ads]);
 
+  const chartConfig = {
+    active: {
+      label: "Active",
+      theme: {
+        light: "#2563eb",
+        dark: "#3b82f6"
+      }
+    },
+    paused: {
+      label: "Paused",
+      theme: {
+        light: "#4b5563",
+        dark: "#6b7280"
+      }
+    },
+    clicks: {
+      label: "Clicks",
+      theme: {
+        light: "#2563eb",
+        dark: "#3b82f6"
+      }
+    },
+    impressions: {
+      label: "Impressions",
+      theme: {
+        light: "#4b5563",
+        dark: "#6b7280"
+      }
+    },
+    ctr: {
+      label: "CTR",
+      theme: {
+        light: "#10b981",
+        dark: "#34d399"
+      }
+    }
+  };
+
   const chartData = [
     {
       name: 'Banner Ads',
@@ -139,7 +177,7 @@ export default function Index() {
             <CardTitle>Ad Status Overview</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <ChartContainer>
+            <ChartContainer config={chartConfig}>
               <ResponsiveContainer>
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -147,8 +185,8 @@ export default function Index() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="active" name="Active" fill="#2563eb" />
-                  <Bar dataKey="paused" name="Paused" fill="#4b5563" />
+                  <Bar dataKey="active" name="Active" fill="var(--color-active)" />
+                  <Bar dataKey="paused" name="Paused" fill="var(--color-paused)" />
                 </BarChart>
               </ResponsiveContainer>
             </ChartContainer>
@@ -160,7 +198,7 @@ export default function Index() {
             <CardTitle>Performance Trends</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <ChartContainer>
+            <ChartContainer config={chartConfig}>
               <ResponsiveContainer>
                 <LineChart data={performanceData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -168,9 +206,9 @@ export default function Index() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="clicks" stroke="#2563eb" />
-                  <Line type="monotone" dataKey="impressions" stroke="#4b5563" />
-                  <Line type="monotone" dataKey="ctr" stroke="#10b981" />
+                  <Line type="monotone" dataKey="clicks" stroke="var(--color-clicks)" />
+                  <Line type="monotone" dataKey="impressions" stroke="var(--color-impressions)" />
+                  <Line type="monotone" dataKey="ctr" stroke="var(--color-ctr)" />
                 </LineChart>
               </ResponsiveContainer>
             </ChartContainer>
