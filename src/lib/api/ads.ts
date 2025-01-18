@@ -34,7 +34,7 @@ export async function fetchActiveInterstitialAds() {
 export async function recordAdClick(adId: string) {
   const { data: ad, error: fetchError } = await supabase
     .from('ads')
-    .select('clicks, max_clicks, status')
+    .select('clicks, max_clicks, status, title, image_url')
     .eq('id', adId)
     .single();
 
@@ -69,6 +69,22 @@ export async function recordAdClick(adId: string) {
       console.error('Error updating ad status:', updateError);
       throw updateError;
     }
+
+    // Create notification for reaching click limit
+    const { error: notificationError } = await supabase
+      .from('notifications')
+      .insert({
+        ad_id: adId,
+        ad_title: ad.title,
+        ad_image: ad.image_url,
+        message: "Ad has been paused after reaching its click limit.",
+        read: false
+      });
+
+    if (notificationError) {
+      console.error('Error creating notification:', notificationError);
+      throw notificationError;
+    }
   }
 }
 
@@ -89,6 +105,22 @@ export async function checkAndUpdateAdStatus(ad: Ad) {
     if (error) {
       console.error('Error updating ad status:', error);
       throw error;
+    }
+
+    // Create notification for reaching click limit
+    const { error: notificationError } = await supabase
+      .from('notifications')
+      .insert({
+        ad_id: ad.id,
+        ad_title: ad.title,
+        ad_image: ad.image_url,
+        message: "Ad has been paused after reaching its click limit.",
+        read: false
+      });
+
+    if (notificationError) {
+      console.error('Error creating notification:', notificationError);
+      throw notificationError;
     }
   }
 }

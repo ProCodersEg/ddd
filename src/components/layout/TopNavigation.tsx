@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bell, LogOut } from 'lucide-react';
+import { Bell, LogOut, Home, LayoutDashboard } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth";
@@ -28,6 +28,7 @@ interface Notification {
 export function TopNavigation() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const { data: notifications } = useQuery({
     queryKey: ['notifications'],
@@ -44,12 +45,33 @@ export function TopNavigation() {
 
   const unreadCount = notifications?.filter(n => !n.read).length || 0;
 
-  const markAsRead = async (notificationId: string) => {
-    await supabase
-      .from('notifications')
-      .update({ read: true })
-      .eq('id', notificationId);
-  };
+  const markAsReadMutation = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('read', false);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
 
   const handleLogout = async () => {
     try {
@@ -74,25 +96,27 @@ export function TopNavigation() {
         <Link 
           to="/" 
           className={cn(
-            "text-sm font-medium transition-colors hover:text-primary",
-            "text-muted-foreground px-4 py-2 rounded-md hover:bg-accent/80"
+            "text-sm font-medium transition-colors hover:text-primary flex items-center",
+            "text-muted-foreground px-4 py-2 rounded-md bg-accent/50 hover:bg-accent"
           )}
         >
+          <Home className="w-4 h-4 mr-2" />
           Home
         </Link>
         <Link 
           to="/ads" 
           className={cn(
-            "text-sm font-medium transition-colors hover:text-primary",
-            "text-muted-foreground px-4 py-2 rounded-md hover:bg-accent/80"
+            "text-sm font-medium transition-colors hover:text-primary flex items-center",
+            "text-muted-foreground px-4 py-2 rounded-md bg-accent/50 hover:bg-accent"
           )}
         >
+          <LayoutDashboard className="w-4 h-4 mr-2" />
           Ads
         </Link>
       </div>
 
       <div className="flex items-center gap-4">
-        <DropdownMenu>
+        <DropdownMenu onOpenChange={() => unreadCount > 0 && markAllAsReadMutation.mutate()}>
           <DropdownMenuTrigger className="relative">
             <div className="p-2 rounded-md hover:bg-accent/80 transition-colors">
               <Bell className="h-5 w-5 text-muted-foreground" />
@@ -111,7 +135,7 @@ export function TopNavigation() {
               <DropdownMenuItem
                 key={notification.id}
                 className="flex items-start gap-3 p-3 cursor-pointer hover:bg-accent/80"
-                onClick={() => markAsRead(notification.id)}
+                onClick={() => markAsReadMutation.mutate(notification.id)}
               >
                 <img
                   src={notification.ad_image}
