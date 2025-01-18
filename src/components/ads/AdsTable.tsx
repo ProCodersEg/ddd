@@ -16,12 +16,20 @@ interface AdsTableProps {
 export function AdsTable({ ads, onUpdate }: AdsTableProps) {
   const { toast } = useToast();
   const [editingAd, setEditingAd] = useState<Ad | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async (id: string) => {
     const confirmed = window.confirm("Are you sure you want to delete this ad?");
     if (!confirmed) return;
 
+    setIsDeleting(true);
     try {
+      // First verify the session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("You must be logged in to delete ads");
+      }
+
       const { error } = await supabase
         .from('ads')
         .delete()
@@ -35,11 +43,14 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
       });
       onUpdate();
     } catch (error: any) {
+      console.error("Delete error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to delete ad. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -100,6 +111,7 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
                     variant="outline"
                     size="icon"
                     onClick={() => handleDelete(ad.id)}
+                    disabled={isDeleting}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
