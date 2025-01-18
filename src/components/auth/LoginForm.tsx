@@ -21,9 +21,14 @@ export function LoginForm() {
       await signIn(email, password);
       navigate("/dashboard");
     } catch (error: any) {
+      // Check for specific invalid credentials error
+      const errorMessage = error.message.includes("Invalid login credentials")
+        ? "Invalid email or password. Please try again."
+        : "An error occurred while logging in. Please try again.";
+
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Login Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
