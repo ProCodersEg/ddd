@@ -8,6 +8,7 @@ public class AdRotationManager {
     private BannerAdView bannerAdView;
     private AdApiClient adApiClient;
     private Runnable rotationRunnable;
+    private boolean isPaused = false;
 
     public AdRotationManager(BannerAdView bannerAdView) {
         this.bannerAdView = bannerAdView;
@@ -36,7 +37,7 @@ public class AdRotationManager {
                             adsList.add(ad);
                         }
                     }
-                    if (!adsList.isEmpty()) {
+                    if (!adsList.isEmpty() && !isPaused) {
                         startRotation();
                     } else {
                         // Handle case when no active ads are available
@@ -109,13 +110,31 @@ public class AdRotationManager {
         });
     }
 
-    public void onPause() {
+    // Make these methods public so they can be called from Activity/Fragment
+    public void pause() {
+        isPaused = true;
         if (rotationRunnable != null) {
             handler.removeCallbacks(rotationRunnable);
         }
     }
 
+    public void resume() {
+        isPaused = false;
+        if (!adsList.isEmpty()) {
+            startRotation();
+        } else {
+            loadAds();
+        }
+    }
+
+    // Deprecated methods - kept for backward compatibility
+    @Deprecated
+    public void onPause() {
+        pause();
+    }
+
+    @Deprecated
     public void onResume() {
-        startRotation();
+        resume();
     }
 }
