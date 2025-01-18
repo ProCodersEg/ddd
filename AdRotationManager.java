@@ -2,7 +2,6 @@ public class AdRotationManager {
     private static final int MIN_DISPLAY_TIME = 5000; // 5 seconds
     private static final int MAX_DISPLAY_TIME = 15000; // 15 seconds
     private static final int RELOAD_INTERVAL = 30000; // Reload ads every 30 seconds
-    private static final int MAX_DAILY_IMPRESSIONS = 10;
 
     private final List<Ad> adsList = new ArrayList<>();
     private final Random random = new Random();
@@ -11,7 +10,6 @@ public class AdRotationManager {
     private final AdApiClient adApiClient;
     private Runnable rotationRunnable;
     private boolean isPaused = false;
-    private Map<String, Integer> adImpressions = new HashMap<>();
 
     public AdRotationManager(BannerAdView bannerAdView, Context context) {
         if (bannerAdView == null) {
@@ -99,14 +97,12 @@ public class AdRotationManager {
         if (adsList.isEmpty()) {
             handleNoAds();
         } else if (wasEmpty || rotationRunnable == null) {
-            // Start rotation only if we have ads and weren't rotating before
             if (!isPaused) {
                 bannerAdView.setVisibility(View.VISIBLE);
                 startRotation();
             }
         }
         
-        // Log the current state for debugging
         Log.d("AdRotationManager", "Updated ads list. Count: " + adsList.size());
     }
 
@@ -125,18 +121,11 @@ public class AdRotationManager {
             return false;
         }
         
-        // Check click limits
-        if (ad.getMaxClicks() != null && ad.getClicks() >= ad.getMaxClicks()) {
-            return false;
-        }
-        
-        // Check daily impression limits
-        Integer impressions = adImpressions.get(ad.getId());
-        return impressions == null || impressions < MAX_DAILY_IMPRESSIONS;
+        // Only check click limits
+        return ad.getMaxClicks() == null || ad.getClicks() < ad.getMaxClicks();
     }
 
     private long calculateNextDisplayTime() {
-        // Smart timing based on current hour
         Calendar calendar = Calendar.getInstance();
         int currentHour = calendar.get(Calendar.HOUR_OF_DAY);
         
@@ -152,7 +141,6 @@ public class AdRotationManager {
     private Ad selectNextAd() {
         if (adsList.isEmpty()) return null;
         
-        // Weight-based selection
         List<AdWeight> weightedAds = new ArrayList<>();
         double totalWeight = 0;
         
@@ -178,16 +166,10 @@ public class AdRotationManager {
     private double calculateAdWeight(Ad ad) {
         double weight = 1.0;
         
-        // Factor in click performance
+        // Only factor in click performance
         if (ad.getMaxClicks() != null) {
             double clickRatio = (double) ad.getClicks() / ad.getMaxClicks();
             weight *= (1.0 - clickRatio); // Lower weight for ads closer to max clicks
-        }
-        
-        // Factor in impression count
-        Integer impressions = adImpressions.get(ad.getId());
-        if (impressions != null) {
-            weight *= (1.0 - ((double) impressions / MAX_DAILY_IMPRESSIONS));
         }
         
         return Math.max(0.1, weight); // Ensure minimum weight of 0.1
@@ -227,10 +209,6 @@ public class AdRotationManager {
             handleNoAds();
             return;
         }
-
-        // Update impressions
-        String adId = selectedAd.getId();
-        adImpressions.put(adId, adImpressions.getOrDefault(adId, 0) + 1);
 
         handler.post(() -> {
             if (!isPaused) {
