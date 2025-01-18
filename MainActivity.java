@@ -28,4 +28,12 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         adRotationManager.resume();
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (adRotationManager != null) {
+            adRotationManager.destroy();
+        }
+    }
 }

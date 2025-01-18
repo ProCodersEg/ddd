@@ -11,6 +11,7 @@ public class AdRotationManager {
     private boolean isPaused = false;
     private Map<String, Integer> adImpressions = new HashMap<>();
     private static final int MAX_DAILY_IMPRESSIONS = 10;
+    private static final int RELOAD_INTERVAL = 30000; // Reload ads every 30 seconds
 
     public AdRotationManager(BannerAdView bannerAdView, Context context) {
         if (bannerAdView == null) {
@@ -19,6 +20,19 @@ public class AdRotationManager {
         this.bannerAdView = bannerAdView;
         this.adApiClient = new AdApiClient(context);
         loadAds();
+        startPeriodicReload();
+    }
+
+    private void startPeriodicReload() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (!isPaused) {
+                    loadAds();
+                }
+                handler.postDelayed(this, RELOAD_INTERVAL);
+            }
+        }, RELOAD_INTERVAL);
     }
 
     private void loadAds() {
@@ -32,7 +46,8 @@ public class AdRotationManager {
                     }
 
                     JSONArray jsonArray = new JSONArray(response);
-                    adsList.clear();
+                    List<Ad> newAdsList = new ArrayList<>();
+                    
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject adJson = jsonArray.getJSONObject(i);
                         if ("active".equals(adJson.optString("status"))) {
@@ -45,7 +60,6 @@ public class AdRotationManager {
                             ad.setStatus(adJson.getString("status"));
                             ad.setClicks(adJson.optInt("clicks", 0));
                             
-                            // Safely handle null max_clicks
                             if (!adJson.isNull("max_clicks")) {
                                 ad.setMaxClicks(adJson.getInt("max_clicks"));
                             } else {
@@ -53,14 +67,21 @@ public class AdRotationManager {
                             }
                             
                             if (shouldBeActive(ad)) {
-                                adsList.add(ad);
+                                newAdsList.add(ad);
                             }
                         }
                     }
-                    
+
                     handler.post(() -> {
+                        // Update ads list and handle visibility
+                        adsList.clear();
+                        adsList.addAll(newAdsList);
+                        
                         if (!adsList.isEmpty() && !isPaused) {
-                            startRotation();
+                            bannerAdView.setVisibility(View.VISIBLE);
+                            if (rotationRunnable == null) {
+                                startRotation();
+                            }
                         } else {
                             Log.d("AdRotationManager", "No active ads available");
                             bannerAdView.setVisibility(View.GONE);
@@ -74,7 +95,13 @@ public class AdRotationManager {
             @Override
             public void onError(String error) {
                 Log.e("AdRotationManager", "Error loading ads: " + error);
-                handler.post(() -> bannerAdView.setVisibility(View.GONE));
+                handler.post(() -> {
+                    if (adsList.isEmpty()) {
+                        bannerAdView.setVisibility(View.GONE);
+                    }
+                    // Retry loading after a delay if there was an error
+                    handler.postDelayed(() -> loadAds(), 5000);
+                });
             }
         });
     }
@@ -94,34 +121,6 @@ public class AdRotationManager {
         }
         
         return true;
-    }
-
-    private void startRotation() {
-        if (rotationRunnable != null) {
-            handler.removeCallbacks(rotationRunnable);
-        }
-
-        if (adsList.isEmpty()) {
-            Log.d("AdRotationManager", "No ads available to start rotation");
-            handler.post(() -> bannerAdView.setVisibility(View.GONE));
-            loadAds();
-            return;
-        }
-
-        rotationRunnable = new Runnable() {
-            @Override
-            public void run() {
-                showNextAd();
-                if (adsList.size() <= 1) {
-                    loadAds();
-                }
-                long nextDisplayTime = calculateNextDisplayTime();
-                handler.postDelayed(this, nextDisplayTime);
-            }
-        };
-
-        showNextAd();
-        handler.postDelayed(rotationRunnable, calculateNextDisplayTime());
     }
 
     private long calculateNextDisplayTime() {
@@ -182,6 +181,31 @@ public class AdRotationManager {
         return Math.max(0.1, weight); // Ensure minimum weight of 0.1
     }
 
+    private void startRotation() {
+        if (rotationRunnable != null) {
+            handler.removeCallbacks(rotationRunnable);
+        }
+
+        if (adsList.isEmpty()) {
+            Log.d("AdRotationManager", "No ads available to start rotation");
+            handler.post(() -> bannerAdView.setVisibility(View.GONE));
+            loadAds(); // Try to load ads again
+            return;
+        }
+
+        rotationRunnable = new Runnable() {
+            @Override
+            public void run() {
+                showNextAd();
+                long nextDisplayTime = calculateNextDisplayTime();
+                handler.postDelayed(this, nextDisplayTime);
+            }
+        };
+
+        showNextAd();
+        handler.postDelayed(rotationRunnable, calculateNextDisplayTime());
+    }
+
     private void showNextAd() {
         if (adsList.isEmpty()) {
             Log.d("AdRotationManager", "No ads available to show");
@@ -201,9 +225,31 @@ public class AdRotationManager {
         adImpressions.put(adId, adImpressions.getOrDefault(adId, 0) + 1);
 
         handler.post(() -> {
-            bannerAdView.setVisibility(View.VISIBLE);
-            bannerAdView.setAd(selectedAd);
+            if (!isPaused) {
+                bannerAdView.setVisibility(View.VISIBLE);
+                bannerAdView.setAd(selectedAd);
+            }
         });
+    }
+
+    public void pause() {
+        isPaused = true;
+        if (rotationRunnable != null) {
+            handler.removeCallbacks(rotationRunnable);
+            rotationRunnable = null;
+        }
+        handler.post(() -> bannerAdView.setVisibility(View.GONE));
+    }
+
+    public void resume() {
+        isPaused = false;
+        loadAds(); // Reload ads when resuming
+    }
+
+    // Clean up resources
+    public void destroy() {
+        pause();
+        handler.removeCallbacksAndMessages(null);
     }
 
     private static class AdWeight {
@@ -213,22 +259,6 @@ public class AdRotationManager {
         AdWeight(Ad ad, double weight) {
             this.ad = ad;
             this.weight = weight;
-        }
-    }
-
-    public void pause() {
-        isPaused = true;
-        if (rotationRunnable != null) {
-            handler.removeCallbacks(rotationRunnable);
-        }
-    }
-
-    public void resume() {
-        isPaused = false;
-        if (!adsList.isEmpty()) {
-            startRotation();
-        } else {
-            loadAds();
         }
     }
 }
