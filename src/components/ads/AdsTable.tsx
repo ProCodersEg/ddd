@@ -63,51 +63,25 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
     setIsDeleting(true);
     try {
-      console.log("Starting delete process for ad:", id);
-      
       // Get the ad details before deletion
       const { data: adToDelete, error: fetchError } = await supabase
         .from('ads')
-        .select('*')
+        .select('title, image_url, description, clicks')
         .eq('id', id)
         .single();
 
-      if (fetchError) {
-        console.error("Error fetching ad details:", fetchError);
-        throw fetchError;
-      }
+      if (fetchError) throw fetchError;
+      if (!adToDelete) throw new Error("Ad not found");
 
-      if (!adToDelete) {
-        console.error("Ad not found");
-        throw new Error("Ad not found");
-      }
-
-      console.log("Deleting existing history entries");
-      // First delete any existing history entries
-      const { error: historyDeleteError } = await supabase
-        .from('ad_history')
-        .delete()
-        .eq('ad_id', id);
-
-      if (historyDeleteError) {
-        console.error("Error deleting history entries:", historyDeleteError);
-        throw historyDeleteError;
-      }
-
-      console.log("Deleting ad");
-      // Now delete the ad
+      // Delete the ad first
       const { error: deleteError } = await supabase
         .from('ads')
         .delete()
         .eq('id', id);
 
-      if (deleteError) {
-        console.error("Error deleting ad:", deleteError);
-        throw deleteError;
-      }
+      if (deleteError) throw deleteError;
 
-      console.log("Creating final history entry");
-      // Create the final history entry
+      // Create the final history entry after successful deletion
       const { error: historyError } = await supabase
         .from('ad_history')
         .insert({
@@ -121,10 +95,8 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
       if (historyError) {
         console.error('Error creating deletion history:', historyError);
-        // Don't throw here since the deletion was successful
       }
 
-      console.log("Delete process completed successfully");
       toast({
         title: "Success",
         description: "Ad deleted successfully",
