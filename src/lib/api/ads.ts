@@ -29,10 +29,10 @@ export async function fetchActiveInterstitialAds() {
 
 // Record ad click
 export async function recordAdClick(adId: string) {
-  // First, update the clicks count in the ads table
+  // First, update the clicks count in the ads table using increment
   const { error: updateError } = await supabase
     .from('ads')
-    .update({ clicks: supabase.raw('clicks + 1') })
+    .update({ clicks: supabase.sql`clicks + 1` })
     .eq('id', adId);
   
   if (updateError) {
@@ -52,10 +52,10 @@ export async function recordAdClick(adId: string) {
 
 // Record ad impression
 export async function recordAdImpression(adId: string) {
-  // First, update the impressions count in the ads table
+  // First, update the impressions count in the ads table using increment
   const { error: updateError } = await supabase
     .from('ads')
-    .update({ impressions: supabase.raw('impressions + 1') })
+    .update({ impressions: supabase.sql`impressions + 1` })
     .eq('id', adId);
   
   if (updateError) {
