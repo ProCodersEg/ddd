@@ -172,3 +172,4 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
       </Sheet>
     </>
   );
+}
