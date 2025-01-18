@@ -24,29 +24,20 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
     const checkLimitsAndStatus = async () => {
       try {
         await Promise.all(ads.map(async (ad) => {
-          if (ad.status === 'paused') {
-            const shouldReactivate = (
-              (!ad.max_clicks || ad.clicks < ad.max_clicks) &&
-              ad.pause_reason === 'limits'
-            );
-            
-            if (shouldReactivate) {
-              const { error } = await supabase
-                .from('ads')
-                .update({ 
-                  status: 'active',
-                  pause_reason: null
-                })
-                .eq('id', ad.id);
-                
-              if (error) {
-                console.error('Error reactivating ad:', error);
-              } else {
-                onUpdate();
-              }
+          if (ad.status === 'active' && ad.max_clicks && ad.clicks >= ad.max_clicks) {
+            const { error } = await supabase
+              .from('ads')
+              .update({ 
+                status: 'paused',
+                pause_reason: 'limits'
+              })
+              .eq('id', ad.id);
+
+            if (error) {
+              console.error('Error updating ad status:', error);
+            } else {
+              onUpdate();
             }
-          } else if (ad.status === 'active') {
-            await checkAndUpdateAdStatus(ad);
           }
         }));
       } catch (error) {
@@ -54,7 +45,11 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
       }
     };
 
+    // Run status check immediately and set up interval
     checkLimitsAndStatus();
+    const intervalId = setInterval(checkLimitsAndStatus, 5000); // Check every 5 seconds
+
+    return () => clearInterval(intervalId);
   }, [ads, onUpdate]);
 
   const handleDelete = async (id: string) => {
@@ -63,34 +58,6 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
     setIsDeleting(true);
     try {
-      // First, get the ad details
-      const { data: adToDelete, error: fetchError } = await supabase
-        .from('ads')
-        .select('title, image_url, description, clicks')
-        .eq('id', id)
-        .single();
-
-      if (fetchError) throw fetchError;
-      if (!adToDelete) throw new Error("Ad not found");
-
-      // Create history entry before deletion
-      const { error: historyError } = await supabase
-        .from('ad_history')
-        .insert({
-          ad_id: id,
-          action_type: 'deleted',
-          ad_name: adToDelete.title,
-          ad_image: adToDelete.image_url,
-          ad_description: adToDelete.description,
-          clicks_count: adToDelete.clicks
-        });
-
-      if (historyError) {
-        console.error('Error creating deletion history:', historyError);
-        throw historyError;
-      }
-
-      // Then delete the ad
       const { error: deleteError } = await supabase
         .from('ads')
         .delete()

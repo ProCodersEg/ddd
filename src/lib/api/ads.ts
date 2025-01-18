@@ -34,13 +34,17 @@ export async function fetchActiveInterstitialAds() {
 export async function recordAdClick(adId: string) {
   const { data: ad, error: fetchError } = await supabase
     .from('ads')
-    .select('clicks, max_clicks')
+    .select('clicks, max_clicks, status')
     .eq('id', adId)
     .single();
 
   if (fetchError) {
     console.error('Error fetching ad:', fetchError);
     throw fetchError;
+  }
+
+  if (ad.status !== 'active') {
+    return;
   }
 
   const { error } = await supabase
@@ -68,7 +72,6 @@ export async function recordAdClick(adId: string) {
   }
 }
 
-// Check and update ad status based on limits
 export async function checkAndUpdateAdStatus(ad: Ad) {
   if (!ad.max_clicks) return;
 

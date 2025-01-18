@@ -1,19 +1,21 @@
-create table ad_history (
-  id uuid default uuid_generate_v4() primary key,
-  ad_id uuid references ads(id),
-  action_type text check (action_type in ('added', 'deleted', 'updated')),
-  ad_name text,
-  ad_image text,
-  ad_description text,
-  clicks_count integer default 0,
-  created_at timestamp with time zone default timezone('utc'::text, now())
+create type ad_action as enum ('added', 'updated');
+
+create table public.ad_history (
+    id uuid default gen_random_uuid() primary key,
+    ad_id uuid references public.ads(id) on delete cascade,
+    action_type ad_action not null,
+    ad_name text,
+    ad_image text,
+    ad_description text,
+    clicks_count integer,
+    created_at timestamp with time zone default now()
 );
 
 -- Add RLS policies
-alter table ad_history enable row level security;
+alter table public.ad_history enable row level security;
 
-create policy "Enable read access for authenticated users" on ad_history
-  for select using (auth.role() = 'authenticated');
-
-create policy "Enable insert access for authenticated users" on ad_history
-  for insert with check (auth.role() = 'authenticated');
+create policy "Allow anonymous read access"
+  on public.ad_history
+  for select
+  to anon
+  using (true);
