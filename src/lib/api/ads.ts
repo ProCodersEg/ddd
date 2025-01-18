@@ -10,7 +10,10 @@ export async function fetchActiveBannerAds() {
     .eq('status', 'active')
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching banner ads:', error);
+    throw error;
+  }
   return data as Ad[];
 }
 
@@ -23,7 +26,10 @@ export async function fetchActiveInterstitialAds() {
     .eq('status', 'active')
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching interstitial ads:', error);
+    throw error;
+  }
   return data as Ad[];
 }
 
