@@ -42,27 +42,63 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
   const onSubmit = async (values: any) => {
     setIsSubmitting(true);
     try {
+      // First, verify the session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        throw new Error("Failed to get session");
+      }
+
+      if (!session) {
+        throw new Error("No active session found");
+      }
+
       if (ad) {
         const { error } = await supabase
           .from('ads')
           .update(values)
-          .eq('id', ad.id);
-        if (error) throw error;
+          .eq('id', ad.id)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error("Update error:", error);
+          throw error;
+        }
       } else {
         const { error } = await supabase
           .from('ads')
-          .insert([values]);
-        if (error) throw error;
+          .insert([values])
+          .select()
+          .single();
+        
+        if (error) {
+          console.error("Insert error:", error);
+          throw error;
+        }
       }
+
       onSuccess();
       toast({
         title: "Success",
         description: ad ? "Ad updated successfully" : "Ad created successfully",
       });
     } catch (error: any) {
+      console.error("Operation failed:", error);
+      
+      let errorMessage = ad 
+        ? "Failed to update ad. Please try again." 
+        : "Failed to create ad. Please try again.";
+      
+      if (error.message.includes("No active session")) {
+        errorMessage = "Please log in again to continue.";
+      } else if (error.message.includes("permission")) {
+        errorMessage = "You don't have permission to perform this action.";
+      }
+      
       toast({
         title: "Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
