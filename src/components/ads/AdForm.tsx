@@ -64,34 +64,14 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
           .eq('id', ad.id);
 
         if (updateError) throw updateError;
-
-        await supabase.from('ad_history').insert({
-          ad_id: ad.id,
-          action_type: 'updated',
-          ad_name: values.title,
-          ad_image: values.image_url,
-          ad_description: values.description,
-          clicks_count: values.clicks
-        });
       } else {
-        const { data: newAd, error: createError } = await supabase
+        const { error: createError } = await supabase
           .from('ads')
           .insert(formattedValues)
           .select()
           .single();
 
         if (createError) throw createError;
-
-        if (newAd) {
-          await supabase.from('ad_history').insert({
-            ad_id: newAd.id,
-            action_type: 'added',
-            ad_name: values.title,
-            ad_image: values.image_url,
-            ad_description: values.description,
-            clicks_count: 0
-          });
-        }
       }
 
       onSuccess();
