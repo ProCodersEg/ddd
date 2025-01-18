@@ -10,12 +10,12 @@ public class AdRotationManager {
     private Runnable rotationRunnable;
     private boolean isPaused = false;
 
-    public AdRotationManager(BannerAdView bannerAdView) {
+    public AdRotationManager(BannerAdView bannerAdView, Context context) {
         if (bannerAdView == null) {
             throw new IllegalArgumentException("BannerAdView cannot be null");
         }
         this.bannerAdView = bannerAdView;
-        this.adApiClient = new AdApiClient();
+        this.adApiClient = new AdApiClient(context);
         loadAds();
     }
 
@@ -196,15 +196,5 @@ public class AdRotationManager {
         } else {
             loadAds();
         }
-    }
-
-    @Deprecated
-    public void onPause() {
-        pause();
-    }
-
-    @Deprecated
-    public void onResume() {
-        resume();
     }
 }

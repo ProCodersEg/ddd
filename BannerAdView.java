@@ -19,7 +19,7 @@ public class BannerAdView extends ConstraintLayout {
         adImage = findViewById(R.id.ad_image);
         titleText = findViewById(R.id.ad_title);
         descriptionText = findViewById(R.id.ad_description);
-        adApiClient = new AdApiClient();
+        adApiClient = new AdApiClient(context);
     }
 
     public void setAd(Ad ad) {
