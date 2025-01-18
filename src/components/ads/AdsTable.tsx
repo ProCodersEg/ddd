@@ -57,50 +57,60 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
     checkLimitsAndStatus();
   }, [ads, onUpdate]);
 
+  const createHistoryEntry = async (adId: string, actionType: 'added' | 'updated' | 'deleted') => {
+    try {
+      // Get the ad details
+      const { data: ad, error: fetchError } = await supabase
+        .from('ads')
+        .select('title, image_url, description, clicks')
+        .eq('id', adId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching ad details for history:', fetchError);
+        throw fetchError;
+      }
+
+      if (!ad) {
+        throw new Error("Ad not found");
+      }
+
+      console.log(`Creating history entry for ${actionType} action on ad:`, adId);
+
+      const { error: historyError } = await supabase
+        .from('ad_history')
+        .insert({
+          ad_id: adId,
+          action_type: actionType,
+          ad_name: ad.title,
+          ad_image: ad.image_url,
+          ad_description: ad.description,
+          clicks_count: ad.clicks
+        });
+
+      if (historyError) {
+        console.error('Error creating history entry:', historyError);
+        throw historyError;
+      }
+
+      console.log('History entry created successfully');
+    } catch (error) {
+      console.error('Error in createHistoryEntry:', error);
+      throw error;
+    }
+  };
+
   const handleDelete = async (id: string) => {
     const confirmed = window.confirm("Are you sure you want to delete this ad?");
     if (!confirmed) return;
 
     setIsDeleting(true);
     try {
-      // Get the ad details before deletion
-      const { data: adToDelete, error: fetchError } = await supabase
-        .from('ads')
-        .select('title, image_url, description, clicks')
-        .eq('id', id)
-        .single();
+      // Create history entry before deletion
+      await createHistoryEntry(id, 'deleted');
+      console.log('History entry created, proceeding with ad deletion');
 
-      if (fetchError) {
-        console.error('Error fetching ad details:', fetchError);
-        throw fetchError;
-      }
-      
-      if (!adToDelete) {
-        throw new Error("Ad not found");
-      }
-
-      console.log('Creating history entry for ad:', id);
-      
-      // Create the history entry first
-      const { error: historyError } = await supabase
-        .from('ad_history')
-        .insert({
-          ad_id: id,
-          action_type: 'deleted',
-          ad_name: adToDelete.title,
-          ad_image: adToDelete.image_url,
-          ad_description: adToDelete.description,
-          clicks_count: adToDelete.clicks
-        });
-
-      if (historyError) {
-        console.error('Error creating deletion history:', historyError);
-        throw historyError;
-      }
-
-      console.log('History entry created successfully, proceeding with ad deletion');
-
-      // Then delete the ad
+      // Delete the ad
       const { error: deleteError } = await supabase
         .from('ads')
         .delete()
@@ -112,7 +122,6 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
       }
 
       console.log('Ad deleted successfully');
-
       toast({
         title: "Success",
         description: "Ad deleted successfully",
@@ -196,7 +205,8 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
           {editingAd && (
             <AdForm
               ad={editingAd}
-              onSuccess={() => {
+              onSuccess={async () => {
+                await createHistoryEntry(editingAd.id, 'updated');
                 setEditingAd(null);
                 onUpdate();
                 toast({
