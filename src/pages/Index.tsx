@@ -97,45 +97,52 @@ export default function Index() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <p>Loading analytics...</p>
+        <div className="animate-pulse text-lg text-muted-foreground">
+          Loading analytics...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 py-6 space-y-6 max-w-7xl">
-      <h1 className="text-2xl sm:text-3xl font-bold mb-8">Analytics Dashboard</h1>
+    <div className="container mx-auto px-4 sm:px-6 py-6 space-y-8 max-w-7xl">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">Analytics Dashboard</h1>
+        <p className="text-muted-foreground">
+          Monitor your advertising performance and metrics
+        </p>
+      </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Clicks</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <Activity className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalClicks}</div>
+            <div className="text-2xl font-bold text-blue-900">{stats.totalClicks}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Campaigns</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-green-900">
               {stats.activeBannerAds + stats.activeInterstitialAds}
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Click Rate</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-purple-900">
               {(stats.totalClicks / (stats.activeBannerAds + stats.activeInterstitialAds || 1)).toFixed(2)}
             </div>
           </CardContent>
@@ -143,7 +150,7 @@ export default function Index() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="bg-white">
           <CardHeader>
             <CardTitle>Ad Status Overview</CardTitle>
           </CardHeader>
@@ -164,7 +171,7 @@ export default function Index() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white">
           <CardHeader>
             <CardTitle>Click Performance</CardTitle>
           </CardHeader>
@@ -177,7 +184,13 @@ export default function Index() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="clicks" name="Clicks" stroke="var(--color-clicks)" />
+                  <Line 
+                    type="monotone" 
+                    dataKey="clicks" 
+                    name="Clicks" 
+                    stroke="var(--color-clicks)"
+                    strokeWidth={2}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </ChartContainer>
