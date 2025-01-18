@@ -14,30 +14,8 @@ public class AdApiClient {
     }
 
     private String getApiKey() {
-        if (context == null) {
-            Log.w("AdApiClient", "Context is null, using default API key");
-            return API_KEY;
-        }
-
-        try {
-            ApplicationInfo ai = context.getPackageManager()
-                .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-            if (ai == null || ai.metaData == null) {
-                Log.w("AdApiClient", "ApplicationInfo or metadata is null, using default API key");
-                return API_KEY;
-            }
-            
-            String apiKey = ai.metaData.getString("supabase_api_key");
-            if (apiKey == null || apiKey.isEmpty()) {
-                Log.w("AdApiClient", "API key not found in metadata, using default");
-                return API_KEY;
-            }
-            
-            return apiKey;
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.w("AdApiClient", "Failed to load API key from metadata, using default", e);
-            return API_KEY;
-        }
+        // For now, we'll use the hardcoded API key since it's a public anon key
+        return API_KEY;
     }
 
     public void fetchBannerAds(AdCallback callback) {
@@ -45,6 +23,8 @@ public class AdApiClient {
                 .url(BASE_URL + "ads?type=eq.banner&status=eq.active")
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Prefer", "return=representation")
                 .build();
 
         client.newCall(request).enqueue(new Callback() {
@@ -59,6 +39,8 @@ public class AdApiClient {
                     String responseBody = response.body() != null ? response.body().string() : null;
                     callback.onSuccess(responseBody);
                 } else {
+                    String errorBody = response.body() != null ? response.body().string() : "Unknown error";
+                    Log.e("AdApiClient", "Error fetching ads: " + response.code() + " - " + errorBody);
                     callback.onError("Error: " + response.code());
                 }
             }
@@ -87,7 +69,7 @@ public class AdApiClient {
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/json")
-                .addHeader("Prefer", "return=minimal")
+                .addHeader("Prefer", "return=representation")
                 .patch(body)
                 .build();
 
@@ -104,7 +86,8 @@ public class AdApiClient {
                         String errorBody = response.body() != null ? response.body().string() : "No error details";
                         Log.e("AdApiClient", "Error recording click: " + response.code() + ", " + errorBody);
                     } else {
-                        Log.d("AdApiClient", "Successfully recorded click for ad: " + adId);
+                        String responseBody = response.body() != null ? response.body().string() : "";
+                        Log.d("AdApiClient", "Successfully recorded click for ad: " + adId + " - Response: " + responseBody);
                     }
                 } catch (IOException e) {
                     Log.e("AdApiClient", "Error reading response", e);
@@ -137,7 +120,7 @@ public class AdApiClient {
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/json")
-                .addHeader("Prefer", "return=minimal")
+                .addHeader("Prefer", "return=representation")
                 .patch(body)
                 .build();
 
@@ -154,7 +137,8 @@ public class AdApiClient {
                         String errorBody = response.body() != null ? response.body().string() : "No error details";
                         Log.e("AdApiClient", "Error recording impression: " + response.code() + ", " + errorBody);
                     } else {
-                        Log.d("AdApiClient", "Successfully recorded impression for ad: " + adId);
+                        String responseBody = response.body() != null ? response.body().string() : "";
+                        Log.d("AdApiClient", "Successfully recorded impression for ad: " + adId + " - Response: " + responseBody);
                     }
                 } catch (IOException e) {
                     Log.e("AdApiClient", "Error reading response", e);
