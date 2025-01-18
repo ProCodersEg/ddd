@@ -33,17 +33,20 @@ public class BannerAdView extends ConstraintLayout {
         if (ad.getImageUrl() != null) {
             Glide.with(getContext())
                     .load(ad.getImageUrl())
-                    .error(R.drawable.placeholder_image) // Make sure you have a placeholder image
+                    .error(R.drawable.ic_launcher_background)
                     .into(adImage);
         } else {
-            adImage.setImageResource(R.drawable.placeholder_image);
+            adImage.setImageResource(R.drawable.ic_launcher_background);
         }
 
         setOnClickListener(v -> {
             if (ad.getRedirectUrl() != null) {
                 try {
-                    // Record click
-                    new AdApiClient().recordAdClick(ad.getId());
+                    // Update local click count
+                    ad.setClicks(ad.getClicks() + 1);
+                    
+                    // Record click with current count
+                    new AdApiClient().recordAdClick(ad.getId(), ad.getClicks());
 
                     // Open URL
                     Intent intent = new Intent(Intent.ACTION_VIEW);
