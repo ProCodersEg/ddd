@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { signIn } from "@/lib/auth";
-import { Lock, Mail } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Mail, Lock } from "lucide-react";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -33,52 +33,50 @@ export function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-8 bg-white p-8 rounded-lg shadow-lg border border-slate-200">
-      <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
-        <p className="text-sm text-muted-foreground">
-          Enter your credentials to access your account
-        </p>
-      </div>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="pl-10"
-              required
-            />
+    <Card className="w-[350px] shadow-lg">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl font-bold text-center">Welcome back</CardTitle>
+        <CardDescription className="text-center">
+          Enter your credentials to continue
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <div className="relative">
+              <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-10"
+                required
+              />
+            </div>
           </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="pl-10"
-              required
-            />
+          <div className="space-y-2">
+            <div className="relative">
+              <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-10"
+                required
+              />
+            </div>
           </div>
-        </div>
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={isLoading}
-        >
-          {isLoading ? "Signing in..." : "Sign in"}
-        </Button>
-      </form>
-    </div>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? "Signing in..." : "Sign in"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
