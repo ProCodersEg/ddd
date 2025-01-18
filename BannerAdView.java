@@ -3,6 +3,7 @@ public class BannerAdView extends ConstraintLayout {
     private TextView titleText;
     private TextView descriptionText;
     private AdApiClient adApiClient;
+    private Ad currentAd;
 
     public BannerAdView(Context context) {
         super(context);
@@ -29,6 +30,7 @@ public class BannerAdView extends ConstraintLayout {
             return;
         }
 
+        this.currentAd = ad;
         titleText.setText(ad.getTitle() != null ? ad.getTitle() : "");
         descriptionText.setText(ad.getDescription() != null ? ad.getDescription() : "");
 
@@ -41,23 +43,32 @@ public class BannerAdView extends ConstraintLayout {
             adImage.setImageResource(R.drawable.ic_launcher_background);
         }
 
-        setOnClickListener(v -> {
-            if (ad.getRedirectUrl() != null) {
-                try {
-                    // Update local click count
-                    ad.setClicks(ad.getClicks() + 1);
-                    
-                    // Record click with updated count
-                    adApiClient.recordAdClick(ad.getId(), ad.getClicks());
+        setOnClickListener(v -> handleAdClick(ad));
+    }
 
-                    // Open URL
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setData(Uri.parse(ad.getRedirectUrl()));
-                    getContext().startActivity(intent);
-                } catch (ActivityNotFoundException e) {
-                    Log.e("BannerAdView", "Could not open URL: " + ad.getRedirectUrl(), e);
-                }
+    private void handleAdClick(Ad ad) {
+        if (ad.getRedirectUrl() != null) {
+            try {
+                // Update local click count
+                ad.setClicks(ad.getClicks() + 1);
+                
+                // Record click with updated count
+                adApiClient.recordAdClick(ad.getId(), ad.getClicks());
+
+                // Open URL
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(Uri.parse(ad.getRedirectUrl()));
+                getContext().startActivity(intent);
+                
+                // Log click for analytics
+                Log.d("BannerAdView", "Ad clicked: " + ad.getId() + ", New click count: " + ad.getClicks());
+            } catch (ActivityNotFoundException e) {
+                Log.e("BannerAdView", "Could not open URL: " + ad.getRedirectUrl(), e);
             }
-        });
+        }
+    }
+
+    public Ad getCurrentAd() {
+        return currentAd;
     }
 }

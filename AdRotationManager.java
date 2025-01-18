@@ -9,6 +9,8 @@ public class AdRotationManager {
     private final AdApiClient adApiClient;
     private Runnable rotationRunnable;
     private boolean isPaused = false;
+    private Map<String, Integer> adImpressions = new HashMap<>();
+    private static final int MAX_DAILY_IMPRESSIONS = 10;
 
     public AdRotationManager(BannerAdView bannerAdView, Context context) {
         if (bannerAdView == null) {
@@ -79,7 +81,19 @@ public class AdRotationManager {
 
     private boolean shouldBeActive(Ad ad) {
         if (ad == null) return false;
-        return ad.getMaxClicks() == null || ad.getClicks() < ad.getMaxClicks();
+        
+        // Check click limits
+        if (ad.getMaxClicks() != null && ad.getClicks() >= ad.getMaxClicks()) {
+            return false;
+        }
+        
+        // Check daily impression limits
+        Integer impressions = adImpressions.get(ad.getId());
+        if (impressions != null && impressions >= MAX_DAILY_IMPRESSIONS) {
+            return false;
+        }
+        
+        return true;
     }
 
     private void startRotation() {
@@ -111,7 +125,61 @@ public class AdRotationManager {
     }
 
     private long calculateNextDisplayTime() {
-        return random.nextInt(MAX_DISPLAY_TIME - MIN_DISPLAY_TIME) + MIN_DISPLAY_TIME;
+        // Smart timing based on current hour
+        Calendar calendar = Calendar.getInstance();
+        int currentHour = calendar.get(Calendar.HOUR_OF_DAY);
+        
+        // Peak hours (8AM-8PM) - faster rotation
+        if (currentHour >= 8 && currentHour <= 20) {
+            return MIN_DISPLAY_TIME + random.nextInt(5000);
+        }
+        
+        // Non-peak hours - slower rotation
+        return MIN_DISPLAY_TIME + random.nextInt(MAX_DISPLAY_TIME - MIN_DISPLAY_TIME);
+    }
+
+    private Ad selectNextAd() {
+        if (adsList.isEmpty()) return null;
+        
+        // Weight-based selection
+        List<AdWeight> weightedAds = new ArrayList<>();
+        double totalWeight = 0;
+        
+        for (Ad ad : adsList) {
+            double weight = calculateAdWeight(ad);
+            weightedAds.add(new AdWeight(ad, weight));
+            totalWeight += weight;
+        }
+        
+        double randomValue = random.nextDouble() * totalWeight;
+        double currentSum = 0;
+        
+        for (AdWeight weighted : weightedAds) {
+            currentSum += weighted.weight;
+            if (randomValue <= currentSum) {
+                return weighted.ad;
+            }
+        }
+        
+        return adsList.get(0);
+    }
+
+    private double calculateAdWeight(Ad ad) {
+        double weight = 1.0;
+        
+        // Factor in click performance
+        if (ad.getMaxClicks() != null) {
+            double clickRatio = (double) ad.getClicks() / ad.getMaxClicks();
+            weight *= (1.0 - clickRatio); // Lower weight for ads closer to max clicks
+        }
+        
+        // Factor in impression count
+        Integer impressions = adImpressions.get(ad.getId());
+        if (impressions != null) {
+            weight *= (1.0 - ((double) impressions / MAX_DAILY_IMPRESSIONS));
+        }
+        
+        return Math.max(0.1, weight); // Ensure minimum weight of 0.1
     }
 
     private void showNextAd() {
@@ -122,54 +190,30 @@ public class AdRotationManager {
             return;
         }
 
-        currentAdIndex = (currentAdIndex + 1) % adsList.size();
-        
-        Ad currentAd = null;
-        try {
-            currentAd = adsList.get(currentAdIndex);
-        } catch (IndexOutOfBoundsException e) {
-            Log.e("AdRotationManager", "Invalid ad index: " + currentAdIndex, e);
-            loadAds();
+        Ad selectedAd = selectNextAd();
+        if (selectedAd == null) {
+            Log.e("AdRotationManager", "Failed to select next ad");
             return;
         }
 
-        if (currentAd == null) {
-            Log.e("AdRotationManager", "Null ad encountered at index: " + currentAdIndex);
-            adsList.remove(currentAdIndex);
-            if (adsList.isEmpty()) {
-                handler.post(() -> bannerAdView.setVisibility(View.GONE));
-                loadAds();
-            }
-            return;
-        }
+        // Update impressions
+        String adId = selectedAd.getId();
+        adImpressions.put(adId, adImpressions.getOrDefault(adId, 0) + 1);
 
-        if (!shouldBeActive(currentAd)) {
-            adsList.remove(currentAdIndex);
-            if (adsList.isEmpty()) {
-                handler.post(() -> bannerAdView.setVisibility(View.GONE));
-                loadAds();
-                return;
-            }
-            currentAdIndex = currentAdIndex % adsList.size();
-            try {
-                currentAd = adsList.get(currentAdIndex);
-            } catch (IndexOutOfBoundsException e) {
-                Log.e("AdRotationManager", "Error getting next ad after removal", e);
-                loadAds();
-                return;
-            }
-        }
-
-        final Ad finalAd = currentAd;
         handler.post(() -> {
-            if (finalAd != null) {
-                bannerAdView.setVisibility(View.VISIBLE);
-                bannerAdView.setAd(finalAd);
-            } else {
-                Log.e("AdRotationManager", "Attempted to display null ad");
-                bannerAdView.setVisibility(View.GONE);
-            }
+            bannerAdView.setVisibility(View.VISIBLE);
+            bannerAdView.setAd(selectedAd);
         });
+    }
+
+    private static class AdWeight {
+        Ad ad;
+        double weight;
+        
+        AdWeight(Ad ad, double weight) {
+            this.ad = ad;
+            this.weight = weight;
+        }
     }
 
     public void pause() {
