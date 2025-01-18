@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { MediaUpload } from "./form/MediaUpload";
 import { AdTypeSelect } from "./form/AdTypeSelect";
 
@@ -114,129 +115,131 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
   }, [ad, form]);
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="type"
-          render={({ field }) => (
-            <AdTypeSelect value={field.value} onValueChange={field.onChange} />
-          )}
-        />
+    <ScrollArea className="h-[calc(100vh-10rem)] pr-6">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <AdTypeSelect value={field.value} onValueChange={field.onChange} />
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="status"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">
-                  {field.value === 'active' ? 'Active' : 'Paused'}
-                </FormLabel>
-              </div>
-              <Switch
-                checked={field.value === 'active'}
-                onCheckedChange={(checked) => field.onChange(checked ? 'active' : 'paused')}
-              />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">
+                    {field.value === 'active' ? 'Active' : 'Paused'}
+                  </FormLabel>
+                </div>
+                <Switch
+                  checked={field.value === 'active'}
+                  onCheckedChange={(checked) => field.onChange(checked ? 'active' : 'paused')}
+                />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Title</FormLabel>
-              <Input {...field} />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Title</FormLabel>
+                <Input {...field} />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <Input {...field} />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <Input {...field} />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="image_url"
-          render={({ field }) => (
-            <MediaUpload value={field.value} onChange={field.onChange} />
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="image_url"
+            render={({ field }) => (
+              <MediaUpload value={field.value} onChange={field.onChange} />
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="redirect_url"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Redirect URL</FormLabel>
-              <Input {...field} />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="redirect_url"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Redirect URL</FormLabel>
+                <Input {...field} />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="start_date"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Start Date</FormLabel>
-              <Input 
-                type="datetime-local" 
-                {...field} 
-                value={field.value ? new Date(field.value).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)}
-              />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="start_date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Start Date</FormLabel>
+                <Input 
+                  type="datetime-local" 
+                  {...field} 
+                  value={field.value ? new Date(field.value).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)}
+                />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="max_clicks"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Maximum Clicks</FormLabel>
-              <Input 
-                type="number" 
-                placeholder="Unlimited if empty" 
-                {...field} 
-                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-              />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="max_clicks"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Maximum Clicks</FormLabel>
+                <Input 
+                  type="number" 
+                  placeholder="Unlimited if empty" 
+                  {...field} 
+                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="clicks"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Current Clicks</FormLabel>
-              <Input 
-                type="number" 
-                {...field} 
-                onChange={(e) => field.onChange(Number(e.target.value))}
-              />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="clicks"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Current Clicks</FormLabel>
+                <Input 
+                  type="number" 
+                  {...field} 
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <Button type="submit">Save Ad</Button>
-      </form>
-    </Form>
+          <Button type="submit">Save Ad</Button>
+        </form>
+      </Form>
+    </ScrollArea>
   );
 }
