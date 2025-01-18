@@ -52,7 +52,42 @@ public class AdApiClient {
             return;
         }
 
-        // Create JSON object with the incremented click count
+        // First, verify current clicks in database
+        Request getRequest = new Request.Builder()
+                .url(BASE_URL + "ads?id=eq." + adId + "&select=clicks")
+                .addHeader("apikey", getApiKey())
+                .addHeader("Authorization", "Bearer " + getApiKey())
+                .get()
+                .build();
+
+        client.newCall(getRequest).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, IOException e) {
+                Log.e("AdApiClient", "Failed to get current clicks", e);
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                try {
+                    if (response.isSuccessful() && response.body() != null) {
+                        String responseBody = response.body().string();
+                        JSONArray jsonArray = new JSONArray(responseBody);
+                        if (jsonArray.length() > 0) {
+                            JSONObject ad = jsonArray.getJSONObject(0);
+                            int dbClicks = ad.getInt("clicks");
+                            updateClickCount(adId, dbClicks);
+                        }
+                    }
+                } catch (JSONException e) {
+                    Log.e("AdApiClient", "Error parsing JSON response", e);
+                } finally {
+                    response.close();
+                }
+            }
+        });
+    }
+
+    private void updateClickCount(String adId, int currentClicks) {
         JSONObject jsonBody = new JSONObject();
         try {
             jsonBody.put("clicks", currentClicks + 1);
@@ -72,15 +107,14 @@ public class AdApiClient {
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
                 .addHeader("Content-Type", "application/json")
-                .addHeader("Prefer", "return=minimal")
-                .addHeader("Accept", "application/json")
+                .addHeader("Prefer", "return=representation")
                 .patch(body)
                 .build();
 
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, IOException e) {
-                Log.e("AdApiClient", "Failed to record click", e);
+                Log.e("AdApiClient", "Failed to update click count", e);
             }
 
             @Override
@@ -88,13 +122,13 @@ public class AdApiClient {
                 try {
                     if (!response.isSuccessful()) {
                         String errorBody = response.body() != null ? response.body().string() : "No error details";
-                        Log.e("AdApiClient", "Error recording click: " + response.code() + ", " + errorBody);
+                        Log.e("AdApiClient", "Error updating clicks: " + response.code() + ", " + errorBody);
                     } else {
-                        Log.d("AdApiClient", "Successfully recorded click for ad: " + adId + 
+                        Log.d("AdApiClient", "Successfully updated click count for ad: " + adId + 
                               " - Status code: " + response.code() + 
                               " - New click count: " + (currentClicks + 1));
                         
-                        // Double-check the update was successful by making a GET request
+                        // Verify the update
                         verifyClickUpdate(adId, currentClicks + 1);
                     }
                 } catch (IOException e) {
