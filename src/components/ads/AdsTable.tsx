@@ -57,20 +57,53 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
     setIsDeleting(true);
     try {
-      // First, find the ad that's being deleted to record its final state
+      // First, find the ad that's being deleted
       const adToDelete = ads.find(ad => ad.id === id);
       
-      // Delete the ad
+      if (!adToDelete) {
+        throw new Error("Ad not found");
+      }
+
+      // Record the final state in history before deletion
+      const { error: historyError } = await supabase
+        .from('ad_history')
+        .insert({
+          ad_id: id,
+          action_type: 'updated',
+          ad_name: adToDelete.title,
+          ad_image: adToDelete.image_url,
+          ad_description: adToDelete.description,
+          clicks_count: adToDelete.clicks,
+          status: 'deleted'  // Add a status field to indicate this was the final state
+        });
+
+      if (historyError) {
+        console.error("Error recording history:", historyError);
+        throw historyError;
+      }
+
+      // Now attempt to delete the ad
       const { error: deleteError } = await supabase
         .from('ads')
         .delete()
         .eq('id', id);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        // If deletion fails due to foreign key constraint
+        if (deleteError.code === '23503') {  // Foreign key violation
+          toast({
+            title: "Cannot delete ad",
+            description: "This ad has associated history records that need to be preserved.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw deleteError;
+      }
 
       toast({
         title: "Success",
-        description: "Ad deleted successfully",
+        description: "Ad deleted successfully while preserving its history",
       });
       onUpdate();
     } catch (error: any) {
