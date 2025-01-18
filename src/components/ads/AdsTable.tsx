@@ -63,7 +63,7 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
     setIsDeleting(true);
     try {
-      // First, get the ad details before deletion
+      // Get the ad details before deletion for history
       const { data: adToDelete } = await supabase
         .from('ads')
         .select('*')
@@ -71,26 +71,7 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
         .single();
 
       if (adToDelete) {
-        // First, delete all history records for this ad
-        const { error: historyDeleteError } = await supabase
-          .from('ad_history')
-          .delete()
-          .eq('ad_id', id);
-
-        if (historyDeleteError) {
-          console.error('Error deleting history records:', historyDeleteError);
-          throw historyDeleteError;
-        }
-
-        // Now delete the ad itself
-        const { error: deleteError } = await supabase
-          .from('ads')
-          .delete()
-          .eq('id', id);
-
-        if (deleteError) throw deleteError;
-
-        // Create final history entry for the deletion
+        // Create history entry first
         const { error: historyError } = await supabase
           .from('ad_history')
           .insert({
@@ -104,8 +85,15 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
         if (historyError) {
           console.error('Error creating deletion history:', historyError);
-          // Don't throw here as the deletion was successful
         }
+
+        // Delete the ad (history records will be automatically deleted due to CASCADE)
+        const { error: deleteError } = await supabase
+          .from('ads')
+          .delete()
+          .eq('id', id);
+
+        if (deleteError) throw deleteError;
 
         toast({
           title: "Success",
