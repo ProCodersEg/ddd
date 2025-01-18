@@ -75,7 +75,7 @@ export function TopNavigation() {
           to="/" 
           className={cn(
             "text-sm font-medium transition-colors hover:text-primary",
-            "text-muted-foreground px-3 py-2 rounded-md hover:bg-accent"
+            "text-muted-foreground px-4 py-2 rounded-md hover:bg-accent/80"
           )}
         >
           Home
@@ -84,7 +84,7 @@ export function TopNavigation() {
           to="/ads" 
           className={cn(
             "text-sm font-medium transition-colors hover:text-primary",
-            "text-muted-foreground px-3 py-2 rounded-md hover:bg-accent"
+            "text-muted-foreground px-4 py-2 rounded-md hover:bg-accent/80"
           )}
         >
           Ads
@@ -94,7 +94,7 @@ export function TopNavigation() {
       <div className="flex items-center gap-4">
         <DropdownMenu>
           <DropdownMenuTrigger className="relative">
-            <div className="p-2 rounded-md hover:bg-accent transition-colors">
+            <div className="p-2 rounded-md hover:bg-accent/80 transition-colors">
               <Bell className="h-5 w-5 text-muted-foreground" />
               {unreadCount > 0 && (
                 <Badge 
@@ -110,7 +110,7 @@ export function TopNavigation() {
             {notifications?.map((notification) => (
               <DropdownMenuItem
                 key={notification.id}
-                className="flex items-start gap-3 p-3 cursor-pointer"
+                className="flex items-start gap-3 p-3 cursor-pointer hover:bg-accent/80"
                 onClick={() => markAsRead(notification.id)}
               >
                 <img
@@ -141,7 +141,7 @@ export function TopNavigation() {
           variant="ghost"
           size="sm"
           onClick={handleLogout}
-          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 px-4"
         >
           <LogOut className="h-4 w-4 mr-2" />
           Logout
