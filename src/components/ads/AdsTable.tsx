@@ -70,9 +70,17 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
         .eq('id', id)
         .single();
 
-      if (fetchError) throw fetchError;
-      if (!adToDelete) throw new Error("Ad not found");
+      if (fetchError) {
+        console.error('Error fetching ad details:', fetchError);
+        throw fetchError;
+      }
+      
+      if (!adToDelete) {
+        throw new Error("Ad not found");
+      }
 
+      console.log('Creating history entry for ad:', id);
+      
       // Create the history entry first
       const { error: historyError } = await supabase
         .from('ad_history')
@@ -90,13 +98,20 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
         throw historyError;
       }
 
+      console.log('History entry created successfully, proceeding with ad deletion');
+
       // Then delete the ad
       const { error: deleteError } = await supabase
         .from('ads')
         .delete()
         .eq('id', id);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('Error deleting ad:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('Ad deleted successfully');
 
       toast({
         title: "Success",
@@ -118,6 +133,8 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
   const getTypeColor = (type: string) => {
     return type === 'banner' ? 'text-green-500' : 'text-blue-500';
   };
+
+  // ... keep existing code (render method)
 
   return (
     <>
