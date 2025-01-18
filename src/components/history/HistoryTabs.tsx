@@ -17,10 +17,11 @@ export function HistoryTabs() {
     if (!confirmed) return;
 
     try {
+      // Delete all records without the placeholder condition
       const { error } = await supabase
         .from('ad_history')
         .delete()
-        .neq('id', 'placeholder');
+        .not('id', 'is', null); // This will delete all records that have an id
 
       if (error) throw error;
 
