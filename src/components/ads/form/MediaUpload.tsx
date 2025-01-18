@@ -72,11 +72,13 @@ export function MediaUpload({ value, onChange }: MediaUploadProps) {
             disabled={isUploading || !isAuthenticated}
           />
           {value && (
-            <img 
-              src={value} 
-              alt="Ad preview" 
-              className="w-full max-w-xs rounded-md"
-            />
+            <div className="flex justify-center">
+              <img 
+                src={value} 
+                alt="Ad preview" 
+                className="h-32 w-auto object-contain rounded-md"
+              />
+            </div>
           )}
         </div>
       </FormControl>
