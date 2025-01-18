@@ -33,6 +33,7 @@ export function AdHistory() {
         console.error('Error fetching ad history:', error);
         throw error;
       }
+      console.log('Fetched history data:', data);
       return data as AdHistoryEntry[];
     },
   });
@@ -42,15 +43,36 @@ export function AdHistory() {
       const confirmed = window.confirm("Are you sure you want to delete all history entries? This action cannot be undone.");
       if (!confirmed) return;
 
-      // Delete all records without any filter
+      console.log('Starting deletion of all history entries');
+
+      // First, get all history entries
+      const { data: entries } = await supabase
+        .from('ad_history')
+        .select('id');
+
+      if (!entries || entries.length === 0) {
+        console.log('No history entries to delete');
+        return;
+      }
+
+      console.log(`Found ${entries.length} entries to delete`);
+
+      // Delete all entries using a more reliable approach
       const { error } = await supabase
         .from('ad_history')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+        .gte('created_at', '2000-01-01'); // This ensures we catch all entries
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting history:', error);
+        throw error;
+      }
 
-      queryClient.invalidateQueries({ queryKey: ['adHistory'] });
+      console.log('Successfully deleted all history entries');
+
+      // Invalidate and refetch to update the UI
+      await queryClient.invalidateQueries({ queryKey: ['adHistory'] });
+      
       toast({
         title: "Success",
         description: "All history entries have been deleted",
