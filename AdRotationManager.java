@@ -175,31 +175,6 @@ public class AdRotationManager {
             if (finalAd != null) {
                 bannerAdView.setVisibility(View.VISIBLE);
                 bannerAdView.setAd(finalAd);
-
-                bannerAdView.setOnClickListener(v -> {
-                    // Update local click count
-                    finalAd.setClicks(finalAd.getClicks() + 1);
-
-                    // Record click with current count
-                    adApiClient.recordAdClick(finalAd.getId(), finalAd.getClicks());
-
-                    // Check if ad should be removed after this click
-                    if (!shouldBeActive(finalAd)) {
-                        adsList.remove(finalAd);
-                        if (adsList.isEmpty()) {
-                            bannerAdView.setVisibility(View.GONE);
-                            loadAds();
-                        }
-                    }
-
-                    // Open redirect URL
-                    try {
-                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(finalAd.getRedirectUrl()));
-                        bannerAdView.getContext().startActivity(intent);
-                    } catch (ActivityNotFoundException e) {
-                        Log.e("AdRotationManager", "Could not open URL: " + finalAd.getRedirectUrl(), e);
-                    }
-                });
             } else {
                 Log.e("AdRotationManager", "Attempted to display null ad");
                 bannerAdView.setVisibility(View.GONE);

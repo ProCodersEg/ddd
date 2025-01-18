@@ -2,6 +2,7 @@ public class BannerAdView extends ConstraintLayout {
     private ImageView adImage;
     private TextView titleText;
     private TextView descriptionText;
+    private AdApiClient adApiClient;
 
     public BannerAdView(Context context) {
         super(context);
@@ -18,6 +19,7 @@ public class BannerAdView extends ConstraintLayout {
         adImage = findViewById(R.id.ad_image);
         titleText = findViewById(R.id.ad_title);
         descriptionText = findViewById(R.id.ad_description);
+        adApiClient = new AdApiClient();
     }
 
     public void setAd(Ad ad) {
@@ -45,8 +47,8 @@ public class BannerAdView extends ConstraintLayout {
                     // Update local click count
                     ad.setClicks(ad.getClicks() + 1);
                     
-                    // Record click with current count
-                    new AdApiClient().recordAdClick(ad.getId(), ad.getClicks());
+                    // Record click with updated count
+                    adApiClient.recordAdClick(ad.getId(), ad.getClicks());
 
                     // Open URL
                     Intent intent = new Intent(Intent.ACTION_VIEW);
