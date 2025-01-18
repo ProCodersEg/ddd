@@ -14,8 +14,23 @@ create table public.ad_history (
 -- Add RLS policies
 alter table public.ad_history enable row level security;
 
+-- Allow read access for all users
 create policy "Allow anonymous read access"
   on public.ad_history
   for select
   to anon
+  using (true);
+
+-- Allow insert access for authenticated users
+create policy "Allow authenticated users to insert history"
+  on public.ad_history
+  for insert
+  to authenticated
+  with check (true);
+
+-- Allow update access for authenticated users
+create policy "Allow authenticated users to update history"
+  on public.ad_history
+  for update
+  to authenticated
   using (true);
