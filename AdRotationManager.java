@@ -11,6 +11,9 @@ public class AdRotationManager {
     private boolean isPaused = false;
 
     public AdRotationManager(BannerAdView bannerAdView) {
+        if (bannerAdView == null) {
+            throw new IllegalArgumentException("BannerAdView cannot be null");
+        }
         this.bannerAdView = bannerAdView;
         this.adApiClient = new AdApiClient();
         loadAds();
@@ -21,29 +24,43 @@ public class AdRotationManager {
             @Override
             public void onSuccess(String response) {
                 try {
+                    if (response == null) {
+                        Log.e("AdRotationManager", "Received null response");
+                        return;
+                    }
+
                     JSONArray jsonArray = new JSONArray(response);
-                    adsList.clear(); // Clear existing ads before adding new ones
+                    adsList.clear();
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject adJson = jsonArray.getJSONObject(i);
-                        // Only add active ads
                         if ("active".equals(adJson.optString("status"))) {
                             Ad ad = new Ad();
                             ad.setId(adJson.getString("id"));
-                            ad.setTitle(adJson.getString("title"));
-                            ad.setDescription(adJson.getString("description"));
+                            ad.setTitle(adJson.optString("title", ""));
+                            ad.setDescription(adJson.optString("description", ""));
                             ad.setImageUrl(adJson.getString("image_url"));
                             ad.setRedirectUrl(adJson.getString("redirect_url"));
                             ad.setStatus(adJson.getString("status"));
-                            adsList.add(ad);
+                            ad.setClicks(adJson.optInt("clicks", 0));
+                            ad.setImpressions(adJson.optInt("impressions", 0));
+                            ad.setMaxClicks(adJson.has("max_clicks") ? adJson.getInt("max_clicks") : null);
+                            ad.setMaxImpressions(adJson.has("max_impressions") ? adJson.getInt("max_impressions") : null);
+                            
+                            // Check if ad should be active based on limits
+                            if (shouldBeActive(ad)) {
+                                adsList.add(ad);
+                            }
                         }
                     }
-                    if (!adsList.isEmpty() && !isPaused) {
-                        startRotation();
-                    } else {
-                        // Handle case when no active ads are available
-                        Log.d("AdRotationManager", "No active ads available");
-                        bannerAdView.setVisibility(View.GONE);
-                    }
+                    
+                    handler.post(() -> {
+                        if (!adsList.isEmpty() && !isPaused) {
+                            startRotation();
+                        } else {
+                            Log.d("AdRotationManager", "No active ads available");
+                            bannerAdView.setVisibility(View.GONE);
+                        }
+                    });
                 } catch (JSONException e) {
                     Log.e("AdRotationManager", "Error parsing JSON", e);
                 }
@@ -52,8 +69,18 @@ public class AdRotationManager {
             @Override
             public void onError(String error) {
                 Log.e("AdRotationManager", "Error loading ads: " + error);
+                handler.post(() -> bannerAdView.setVisibility(View.GONE));
             }
         });
+    }
+
+    private boolean shouldBeActive(Ad ad) {
+        if (ad == null) return false;
+        
+        boolean withinClickLimit = ad.getMaxClicks() == null || ad.getClicks() < ad.getMaxClicks();
+        boolean withinImpressionLimit = ad.getMaxImpressions() == null || ad.getImpressions() < ad.getMaxImpressions();
+        
+        return withinClickLimit && withinImpressionLimit;
     }
 
     private void startRotation() {
@@ -65,7 +92,6 @@ public class AdRotationManager {
             @Override
             public void run() {
                 showNextAd();
-                // Reload ads periodically to get updated status
                 if (adsList.size() <= 1) {
                     loadAds();
                 }
@@ -84,33 +110,63 @@ public class AdRotationManager {
 
     private void showNextAd() {
         if (adsList.isEmpty()) {
-            loadAds(); // Reload ads if list is empty
+            loadAds();
             return;
         }
 
-        // Get next ad using round-robin
         currentAdIndex = (currentAdIndex + 1) % adsList.size();
         Ad currentAd = adsList.get(currentAdIndex);
+        
+        // Update local impression count
+        currentAd.setImpressions(currentAd.getImpressions() + 1);
+        
+        // Check if ad should still be active after this impression
+        if (!shouldBeActive(currentAd)) {
+            adsList.remove(currentAdIndex);
+            if (adsList.isEmpty()) {
+                handler.post(() -> bannerAdView.setVisibility(View.GONE));
+                loadAds();
+                return;
+            }
+            currentAdIndex = currentAdIndex % adsList.size();
+            currentAd = adsList.get(currentAdIndex);
+        }
 
         // Record impression
         adApiClient.recordAdImpression(currentAd.getId());
 
-        // Update UI on main thread
+        final Ad finalAd = currentAd;
         handler.post(() -> {
             bannerAdView.setVisibility(View.VISIBLE);
-            bannerAdView.setAd(currentAd);
+            bannerAdView.setAd(finalAd);
             
-            // Set click listener for the ad
             bannerAdView.setOnClickListener(v -> {
-                adApiClient.recordAdClick(currentAd.getId());
+                // Update local click count
+                finalAd.setClicks(finalAd.getClicks() + 1);
+                
+                // Record click
+                adApiClient.recordAdClick(finalAd.getId());
+                
+                // Check if ad should be removed after this click
+                if (!shouldBeActive(finalAd)) {
+                    adsList.remove(finalAd);
+                    if (adsList.isEmpty()) {
+                        bannerAdView.setVisibility(View.GONE);
+                        loadAds();
+                    }
+                }
+                
                 // Open redirect URL
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(currentAd.getRedirectUrl()));
-                bannerAdView.getContext().startActivity(intent);
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(finalAd.getRedirectUrl()));
+                    bannerAdView.getContext().startActivity(intent);
+                } catch (ActivityNotFoundException e) {
+                    Log.e("AdRotationManager", "Could not open URL: " + finalAd.getRedirectUrl(), e);
+                }
             });
         });
     }
 
-    // Make these methods public so they can be called from Activity/Fragment
     public void pause() {
         isPaused = true;
         if (rotationRunnable != null) {
@@ -127,7 +183,6 @@ public class AdRotationManager {
         }
     }
 
-    // Deprecated methods - kept for backward compatibility
     @Deprecated
     public void onPause() {
         pause();
