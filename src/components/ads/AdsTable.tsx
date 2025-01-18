@@ -24,11 +24,10 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
     const checkLimitsAndStatus = async () => {
       try {
         await Promise.all(ads.map(async (ad) => {
-          // Only check for reactivation if the ad was paused due to limits
           if (ad.status === 'paused') {
             const shouldReactivate = (
               (!ad.max_clicks || ad.clicks < ad.max_clicks) &&
-              ad.pause_reason === 'limits' // Only reactivate if paused due to limits
+              ad.pause_reason === 'limits'
             );
             
             if (shouldReactivate) {
@@ -36,7 +35,7 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
                 .from('ads')
                 .update({ 
                   status: 'active',
-                  pause_reason: null // Clear the pause reason
+                  pause_reason: null
                 })
                 .eq('id', ad.id);
                 
@@ -72,23 +71,41 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
         .single();
 
       if (adToDelete) {
-        // Create history entry
-        await supabase.from('ad_history').insert({
-          ad_id: id,
-          action_type: 'deleted',
-          ad_name: adToDelete.title,
-          ad_image: adToDelete.image_url,
-          ad_description: adToDelete.description,
-          clicks_count: adToDelete.clicks
-        });
+        // First, delete all history records for this ad
+        const { error: historyDeleteError } = await supabase
+          .from('ad_history')
+          .delete()
+          .eq('ad_id', id);
 
-        // Delete the ad
+        if (historyDeleteError) {
+          console.error('Error deleting history records:', historyDeleteError);
+          throw historyDeleteError;
+        }
+
+        // Now delete the ad itself
         const { error: deleteError } = await supabase
           .from('ads')
           .delete()
           .eq('id', id);
 
         if (deleteError) throw deleteError;
+
+        // Create final history entry for the deletion
+        const { error: historyError } = await supabase
+          .from('ad_history')
+          .insert({
+            ad_id: id,
+            action_type: 'deleted',
+            ad_name: adToDelete.title,
+            ad_image: adToDelete.image_url,
+            ad_description: adToDelete.description,
+            clicks_count: adToDelete.clicks
+          });
+
+        if (historyError) {
+          console.error('Error creating deletion history:', historyError);
+          // Don't throw here as the deletion was successful
+        }
 
         toast({
           title: "Success",
