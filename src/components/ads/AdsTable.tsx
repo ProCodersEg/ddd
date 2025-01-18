@@ -110,7 +110,7 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
       await createHistoryEntry(id, 'deleted');
       console.log('Deletion history entry created successfully');
 
-      // Then delete the ad (history entries will be preserved due to the foreign key setup)
+      // Then delete the ad (this will cascade delete related history entries)
       const { error: deleteError } = await supabase
         .from('ads')
         .delete()
