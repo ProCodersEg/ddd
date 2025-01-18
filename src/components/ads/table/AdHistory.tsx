@@ -45,23 +45,11 @@ export function AdHistory() {
 
       console.log('Starting deletion of all history entries');
 
-      // First, get all history entries
-      const { data: entries } = await supabase
-        .from('ad_history')
-        .select('id');
-
-      if (!entries || entries.length === 0) {
-        console.log('No history entries to delete');
-        return;
-      }
-
-      console.log(`Found ${entries.length} entries to delete`);
-
-      // Delete all entries using a more reliable approach
+      // Delete all entries in a single operation
       const { error } = await supabase
         .from('ad_history')
         .delete()
-        .gte('created_at', '2000-01-01'); // This ensures we catch all entries
+        .not('id', 'is', null); // This ensures we delete all entries
 
       if (error) {
         console.error('Error deleting history:', error);
@@ -70,8 +58,9 @@ export function AdHistory() {
 
       console.log('Successfully deleted all history entries');
 
-      // Invalidate and refetch to update the UI
+      // Force refetch the data
       await queryClient.invalidateQueries({ queryKey: ['adHistory'] });
+      await queryClient.refetchQueries({ queryKey: ['adHistory'] });
       
       toast({
         title: "Success",
