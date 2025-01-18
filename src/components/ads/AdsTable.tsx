@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Edit2, Trash2 } from "lucide-react";
 import { AdForm } from "./AdForm";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { Ad } from "@/types/ads";
 import { checkAndUpdateAdStatus } from "@/lib/api/ads";
+import { AdStatusBadge } from "./table/AdStatusBadge";
+import { AdLimitsDisplay } from "./table/AdLimitsDisplay";
+import { AdActions } from "./table/AdActions";
 
 interface AdsTableProps {
   ads: Ad[];
@@ -19,18 +20,39 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
   const [editingAd, setEditingAd] = useState<Ad | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Check limits and update status for all ads
   useEffect(() => {
-    const checkLimits = async () => {
+    const checkLimitsAndStatus = async () => {
       try {
-        await Promise.all(ads.map(ad => checkAndUpdateAdStatus(ad)));
-        onUpdate(); // Refresh the table after checking limits
+        await Promise.all(ads.map(async (ad) => {
+          // Check if ad should be reactivated (limits increased)
+          if (ad.status === 'paused') {
+            const shouldReactivate = (
+              (!ad.max_clicks || ad.clicks < ad.max_clicks) &&
+              (!ad.max_impressions || ad.impressions < ad.max_impressions)
+            );
+            
+            if (shouldReactivate) {
+              const { error } = await supabase
+                .from('ads')
+                .update({ status: 'active' })
+                .eq('id', ad.id);
+                
+              if (error) {
+                console.error('Error reactivating ad:', error);
+              } else {
+                onUpdate();
+              }
+            }
+          } else {
+            await checkAndUpdateAdStatus(ad);
+          }
+        }));
       } catch (error) {
         console.error('Error checking ad limits:', error);
       }
     };
 
-    checkLimits();
+    checkLimitsAndStatus();
   }, [ads, onUpdate]);
 
   const handleDelete = async (id: string) => {
@@ -39,28 +61,18 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
     setIsDeleting(true);
     try {
-      // First, get the current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        console.error("Session error:", sessionError);
-        throw new Error("Failed to get session");
+      if (sessionError || !session) {
+        throw new Error(sessionError ? sessionError.message : "No active session found");
       }
 
-      if (!session) {
-        throw new Error("No active session found");
-      }
-
-      // Perform the delete operation with the current session
       const { error: deleteError } = await supabase
         .from('ads')
         .delete()
         .eq('id', id)
         .single();
 
-      if (deleteError) {
-        console.error("Delete error:", deleteError);
-        throw deleteError;
-      }
+      if (deleteError) throw deleteError;
 
       toast({
         title: "Success",
@@ -69,17 +81,9 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
       onUpdate();
     } catch (error: any) {
       console.error("Delete operation failed:", error);
-      
-      let errorMessage = "Failed to delete ad. Please try again.";
-      if (error.message.includes("No active session")) {
-        errorMessage = "Please log in again to delete ads.";
-      } else if (error.message.includes("permission")) {
-        errorMessage = "You don't have permission to delete this ad.";
-      }
-      
       toast({
         title: "Error",
-        description: errorMessage,
+        description: error.message || "Failed to delete ad",
         variant: "destructive",
       });
     } finally {
@@ -89,25 +93,6 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
   const getTypeColor = (type: string) => {
     return type === 'banner' ? 'text-green-500' : 'text-blue-500';
-  };
-
-  const getLimitStatus = (ad: Ad) => {
-    const clicksLimit = ad.max_clicks ? `${ad.clicks}/${ad.max_clicks}` : `${ad.clicks}/∞`;
-    const impressionsLimit = ad.max_impressions ? `${ad.impressions}/${ad.max_impressions}` : `${ad.impressions}/∞`;
-    
-    const isClicksLimitReached = ad.max_clicks && ad.clicks >= ad.max_clicks;
-    const isImpressionsLimitReached = ad.max_impressions && ad.impressions >= ad.max_impressions;
-    
-    return (
-      <div className="text-sm">
-        <p className={isClicksLimitReached ? "text-red-500 font-medium" : ""}>
-          Clicks: {clicksLimit}
-        </p>
-        <p className={isImpressionsLimitReached ? "text-red-500 font-medium" : ""}>
-          Impressions: {impressionsLimit}
-        </p>
-      </div>
-    );
   };
 
   return (
@@ -141,36 +126,21 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
                 </span>
               </TableCell>
               <TableCell>
-                <span className={`px-2 py-1 rounded-full text-sm ${
-                  ad.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {ad.status}
-                </span>
+                <AdStatusBadge status={ad.status} />
               </TableCell>
               <TableCell>
                 {new Date(ad.start_date).toLocaleDateString()}
               </TableCell>
               <TableCell>
-                {getLimitStatus(ad)}
+                <AdLimitsDisplay ad={ad} />
               </TableCell>
               <TableCell className="text-right">
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setEditingAd(ad)}
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleDelete(ad.id)}
-                    disabled={isDeleting}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                <AdActions
+                  ad={ad}
+                  onEdit={setEditingAd}
+                  onDelete={handleDelete}
+                  isDeleting={isDeleting}
+                />
               </TableCell>
             </TableRow>
           ))}
