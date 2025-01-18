@@ -39,10 +39,13 @@ export function AdHistory() {
 
   const handleDeleteAllHistory = async () => {
     try {
+      const confirmed = window.confirm("Are you sure you want to delete all history entries? This action cannot be undone.");
+      if (!confirmed) return;
+
       const { error } = await supabase
         .from('ad_history')
         .delete()
-        .neq('id', ''); // Delete all records
+        .not('id', 'is', null); // This deletes all records where id is not null (i.e., all records)
 
       if (error) throw error;
 
@@ -52,6 +55,7 @@ export function AdHistory() {
         description: "All history entries have been deleted",
       });
     } catch (error) {
+      console.error('Error deleting history:', error);
       toast({
         title: "Error",
         description: "Failed to delete history entries",
