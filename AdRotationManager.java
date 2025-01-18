@@ -46,7 +46,6 @@ public class AdRotationManager {
                             ad.setMaxClicks(adJson.has("max_clicks") ? adJson.getInt("max_clicks") : null);
                             ad.setMaxImpressions(adJson.has("max_impressions") ? adJson.getInt("max_impressions") : null);
                             
-                            // Check if ad should be active based on limits
                             if (shouldBeActive(ad)) {
                                 adsList.add(ad);
                             }
@@ -132,8 +131,8 @@ public class AdRotationManager {
             currentAd = adsList.get(currentAdIndex);
         }
 
-        // Record impression
-        adApiClient.recordAdImpression(currentAd.getId());
+        // Record impression with current count
+        adApiClient.recordAdImpression(currentAd.getId(), currentAd.getImpressions());
 
         final Ad finalAd = currentAd;
         handler.post(() -> {
@@ -144,8 +143,8 @@ public class AdRotationManager {
                 // Update local click count
                 finalAd.setClicks(finalAd.getClicks() + 1);
                 
-                // Record click
-                adApiClient.recordAdClick(finalAd.getId());
+                // Record click with current count
+                adApiClient.recordAdClick(finalAd.getId(), finalAd.getClicks());
                 
                 // Check if ad should be removed after this click
                 if (!shouldBeActive(finalAd)) {
