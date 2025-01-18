@@ -24,19 +24,25 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
     setIsDeleting(true);
     try {
-      // First verify the session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       
-      if (!session) {
+      if (!sessionData.session) {
         throw new Error("You must be logged in to delete ads");
       }
 
-      // Ensure we have a fresh auth token
-      const { error: refreshError } = await supabase.auth.refreshSession();
+      // Get a fresh session
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
       if (refreshError) throw refreshError;
+      
+      if (!refreshData.session) {
+        throw new Error("Failed to refresh session");
+      }
 
-      // Attempt to delete with fresh session
+      // Set the fresh access token
+      supabase.auth.setSession(refreshData.session);
+
+      // Attempt delete with fresh session
       const { error: deleteError } = await supabase
         .from('ads')
         .delete()
@@ -52,7 +58,6 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
     } catch (error: any) {
       console.error("Delete error:", error);
       
-      // Handle specific error cases
       let errorMessage = "Failed to delete ad. Please try again.";
       if (error.message.includes("JWT")) {
         errorMessage = "Your session has expired. Please log in again.";
