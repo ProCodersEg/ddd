@@ -63,7 +63,7 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
     setIsDeleting(true);
     try {
-      // Get the ad details before deletion
+      // First, get the ad details
       const { data: adToDelete, error: fetchError } = await supabase
         .from('ads')
         .select('title, image_url, description, clicks')
@@ -73,15 +73,7 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
       if (fetchError) throw fetchError;
       if (!adToDelete) throw new Error("Ad not found");
 
-      // Delete the ad first
-      const { error: deleteError } = await supabase
-        .from('ads')
-        .delete()
-        .eq('id', id);
-
-      if (deleteError) throw deleteError;
-
-      // Create the final history entry after successful deletion
+      // Create history entry before deletion
       const { error: historyError } = await supabase
         .from('ad_history')
         .insert({
@@ -95,7 +87,16 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
       if (historyError) {
         console.error('Error creating deletion history:', historyError);
+        throw historyError;
       }
+
+      // Then delete the ad
+      const { error: deleteError } = await supabase
+        .from('ads')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
 
       toast({
         title: "Success",
