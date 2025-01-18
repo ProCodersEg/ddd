@@ -57,12 +57,18 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
     setIsDeleting(true);
     try {
+      console.log('Deleting ad:', id);
+      
+      // Delete the ad directly - history will be handled by the trigger
       const { error: deleteError } = await supabase
         .from('ads')
         .delete()
         .eq('id', id);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('Delete error:', deleteError);
+        throw deleteError;
+      }
 
       toast({
         title: "Success",

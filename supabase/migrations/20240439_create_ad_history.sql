@@ -1,7 +1,7 @@
 -- Create ad_history table
 CREATE TABLE IF NOT EXISTS ad_history (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  ad_id UUID REFERENCES ads(id) ON DELETE SET NULL,
+  ad_id UUID REFERENCES ads(id) ON DELETE CASCADE,
   action_type TEXT CHECK (action_type IN ('added', 'updated', 'deleted')),
   ad_title TEXT,
   ad_description TEXT,
