@@ -7,6 +7,7 @@ ADD CONSTRAINT ad_history_ad_id_fkey
   ON DELETE CASCADE;
 
 -- Add policy for cascading deletes
+DROP POLICY IF EXISTS "Enable cascade deletes for authenticated users" ON ad_history;
 CREATE POLICY "Enable cascade deletes for authenticated users" ON ad_history
   FOR DELETE
   TO authenticated
