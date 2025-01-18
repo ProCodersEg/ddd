@@ -34,6 +34,10 @@ CREATE POLICY "Enable delete for authenticated users" ON ad_history
   TO authenticated
   USING (true);
 
+-- Drop existing trigger and function if they exist
+DROP TRIGGER IF EXISTS ad_changes_trigger ON ads;
+DROP FUNCTION IF EXISTS log_ad_changes();
+
 -- Create or replace the trigger function
 CREATE OR REPLACE FUNCTION log_ad_changes()
 RETURNS TRIGGER
@@ -44,6 +48,7 @@ BEGIN
   IF TG_OP = 'INSERT' THEN
     INSERT INTO ad_history (ad_id, action_type, ad_title, ad_description, ad_image, clicks)
     VALUES (NEW.id, 'added', NEW.title, NEW.description, NEW.image_url, NEW.clicks);
+    RETURN NEW;
   ELSIF TG_OP = 'UPDATE' THEN
     -- Only log update if content-related fields changed (not just clicks)
     IF NEW.title != OLD.title OR 
@@ -56,19 +61,24 @@ BEGIN
       INSERT INTO ad_history (ad_id, action_type, ad_title, ad_description, ad_image, clicks)
       VALUES (NEW.id, 'updated', NEW.title, NEW.description, NEW.image_url, NEW.clicks);
     END IF;
+    RETURN NEW;
   ELSIF TG_OP = 'DELETE' THEN
     INSERT INTO ad_history (ad_id, action_type, ad_title, ad_description, ad_image, clicks)
     VALUES (OLD.id, 'deleted', OLD.title, OLD.description, OLD.image_url, OLD.clicks);
+    RETURN OLD;
   END IF;
-  RETURN COALESCE(NEW, OLD);
+  RETURN NULL;
 END;
 $$;
 
--- Drop existing trigger if exists
-DROP TRIGGER IF EXISTS ad_changes_trigger ON ads;
-
--- Create trigger
+-- Create trigger that fires BEFORE DELETE
 CREATE TRIGGER ad_changes_trigger
-  AFTER INSERT OR UPDATE OR DELETE ON ads
+  BEFORE DELETE ON ads
+  FOR EACH ROW
+  EXECUTE FUNCTION log_ad_changes();
+
+-- Create separate trigger for INSERT and UPDATE
+CREATE TRIGGER ad_changes_trigger_insert_update
+  AFTER INSERT OR UPDATE ON ads
   FOR EACH ROW
   EXECUTE FUNCTION log_ad_changes();
