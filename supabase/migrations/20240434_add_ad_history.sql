@@ -2,7 +2,7 @@ create type ad_action as enum ('added', 'updated');
 
 create table public.ad_history (
     id uuid default gen_random_uuid() primary key,
-    ad_id uuid references public.ads(id) on delete cascade,
+    ad_id uuid references public.ads(id),  -- Removed "on delete cascade"
     action_type ad_action not null,
     ad_name text,
     ad_image text,

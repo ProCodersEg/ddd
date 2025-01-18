@@ -45,9 +45,8 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
       }
     };
 
-    // Run status check immediately and set up interval
     checkLimitsAndStatus();
-    const intervalId = setInterval(checkLimitsAndStatus, 5000); // Check every 5 seconds
+    const intervalId = setInterval(checkLimitsAndStatus, 5000);
 
     return () => clearInterval(intervalId);
   }, [ads, onUpdate]);
@@ -58,6 +57,10 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
     setIsDeleting(true);
     try {
+      // First, find the ad that's being deleted to record its final state
+      const adToDelete = ads.find(ad => ad.id === id);
+      
+      // Delete the ad
       const { error: deleteError } = await supabase
         .from('ads')
         .delete()
@@ -147,6 +150,21 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
             <AdForm
               ad={editingAd}
               onSuccess={() => {
+                // Record the update in history
+                supabase
+                  .from('ad_history')
+                  .insert({
+                    ad_id: editingAd.id,
+                    action_type: 'updated',
+                    ad_name: editingAd.title,
+                    ad_image: editingAd.image_url,
+                    ad_description: editingAd.description,
+                    clicks_count: editingAd.clicks
+                  })
+                  .then(({ error }) => {
+                    if (error) console.error('Error recording history:', error);
+                  });
+
                 setEditingAd(null);
                 onUpdate();
                 toast({
