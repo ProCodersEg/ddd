@@ -13,6 +13,11 @@ CREATE TABLE IF NOT EXISTS ad_history (
 -- Enable RLS
 ALTER TABLE ad_history ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Enable read access for authenticated users" ON ad_history;
+DROP POLICY IF EXISTS "Enable insert for authenticated users" ON ad_history;
+DROP POLICY IF EXISTS "Enable delete for authenticated users" ON ad_history;
+
 -- Create policies
 CREATE POLICY "Enable read access for authenticated users" ON ad_history
   FOR SELECT
