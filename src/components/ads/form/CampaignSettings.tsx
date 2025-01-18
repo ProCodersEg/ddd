@@ -23,65 +23,33 @@ export function CampaignSettings({ form }: CampaignSettingsProps) {
         )}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FormField
-          control={form.control}
-          name="max_clicks"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Maximum Clicks</FormLabel>
-              <FormControl>
-                <Input type="number" placeholder="Unlimited if empty" {...field} className="w-full" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <FormField
+        control={form.control}
+        name="max_clicks"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Maximum Clicks</FormLabel>
+            <FormControl>
+              <Input type="number" placeholder="Unlimited if empty" {...field} className="w-full" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-        <FormField
-          control={form.control}
-          name="max_impressions"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Maximum Impressions</FormLabel>
-              <FormControl>
-                <Input type="number" placeholder="Unlimited if empty" {...field} className="w-full" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FormField
-          control={form.control}
-          name="clicks"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Current Clicks</FormLabel>
-              <FormControl>
-                <Input type="number" {...field} className="w-full" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="impressions"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Current Impressions</FormLabel>
-              <FormControl>
-                <Input type="number" {...field} className="w-full" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
+      <FormField
+        control={form.control}
+        name="clicks"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Current Clicks</FormLabel>
+            <FormControl>
+              <Input type="number" {...field} className="w-full" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 }
