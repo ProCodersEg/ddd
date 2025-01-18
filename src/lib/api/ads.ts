@@ -32,7 +32,7 @@ export async function recordAdClick(adId: string) {
   // First, update the clicks count in the ads table using increment
   const { error: updateError } = await supabase
     .from('ads')
-    .update({ clicks: supabase.sql`clicks + 1` })
+    .update({ clicks: supabase.rpc('increment', { value: 1, column: 'clicks' }) })
     .eq('id', adId);
   
   if (updateError) {
@@ -55,7 +55,7 @@ export async function recordAdImpression(adId: string) {
   // First, update the impressions count in the ads table using increment
   const { error: updateError } = await supabase
     .from('ads')
-    .update({ impressions: supabase.sql`impressions + 1` })
+    .update({ impressions: supabase.rpc('increment', { value: 1, column: 'impressions' }) })
     .eq('id', adId);
   
   if (updateError) {
