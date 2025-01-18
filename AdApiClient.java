@@ -35,7 +35,7 @@ public class AdApiClient {
     public void recordAdClick(String adId, int clicks) {
         JSONObject jsonBody = new JSONObject();
         try {
-            jsonBody.put("ad_id", adId);
+            jsonBody.put("id", adId);
             jsonBody.put("clicks", clicks);
         } catch (JSONException e) {
             Log.e("AdApiClient", "Error creating JSON body", e);
@@ -43,11 +43,12 @@ public class AdApiClient {
         }
 
         Request request = new Request.Builder()
-                .url(BASE_URL + "rpc/increment_ad_clicks")
+                .url(BASE_URL + "ads?id=eq." + adId)
                 .addHeader("apikey", API_KEY)
                 .addHeader("Authorization", "Bearer " + API_KEY)
                 .addHeader("Content-Type", "application/json")
-                .post(RequestBody.create(
+                .addHeader("Prefer", "return=minimal")
+                .patch(RequestBody.create(
                         MediaType.parse("application/json"),
                         jsonBody.toString()
                 ))
@@ -72,7 +73,7 @@ public class AdApiClient {
     public void recordAdImpression(String adId, int impressions) {
         JSONObject jsonBody = new JSONObject();
         try {
-            jsonBody.put("ad_id", adId);
+            jsonBody.put("id", adId);
             jsonBody.put("impressions", impressions);
         } catch (JSONException e) {
             Log.e("AdApiClient", "Error creating JSON body", e);
@@ -80,11 +81,12 @@ public class AdApiClient {
         }
 
         Request request = new Request.Builder()
-                .url(BASE_URL + "rpc/increment_ad_impressions")
+                .url(BASE_URL + "ads?id=eq." + adId)
                 .addHeader("apikey", API_KEY)
                 .addHeader("Authorization", "Bearer " + API_KEY)
                 .addHeader("Content-Type", "application/json")
-                .post(RequestBody.create(
+                .addHeader("Prefer", "return=minimal")
+                .patch(RequestBody.create(
                         MediaType.parse("application/json"),
                         jsonBody.toString()
                 ))
