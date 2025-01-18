@@ -9,6 +9,7 @@ import { checkAndUpdateAdStatus } from "@/lib/api/ads";
 import { AdStatusBadge } from "./table/AdStatusBadge";
 import { AdLimitsDisplay } from "./table/AdLimitsDisplay";
 import { AdActions } from "./table/AdActions";
+import { AdHistory } from "./table/AdHistory";
 
 interface AdsTableProps {
   ads: Ad[];
@@ -64,24 +65,38 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
     setIsDeleting(true);
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        throw new Error(sessionError ? sessionError.message : "No active session found");
-      }
-
-      const { error: deleteError } = await supabase
+      // First, get the ad details before deletion
+      const { data: adToDelete } = await supabase
         .from('ads')
-        .delete()
+        .select('*')
         .eq('id', id)
         .single();
 
-      if (deleteError) throw deleteError;
+      if (adToDelete) {
+        // Create history entry
+        await supabase.from('ad_history').insert({
+          ad_id: id,
+          action_type: 'deleted',
+          ad_name: adToDelete.title,
+          ad_image: adToDelete.image_url,
+          ad_description: adToDelete.description,
+          clicks_count: adToDelete.clicks
+        });
 
-      toast({
-        title: "Success",
-        description: "Ad deleted successfully",
-      });
-      onUpdate();
+        // Delete the ad
+        const { error: deleteError } = await supabase
+          .from('ads')
+          .delete()
+          .eq('id', id);
+
+        if (deleteError) throw deleteError;
+
+        toast({
+          title: "Success",
+          description: "Ad deleted successfully",
+        });
+        onUpdate();
+      }
     } catch (error: any) {
       console.error("Delete operation failed:", error);
       toast({
@@ -170,6 +185,8 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
           )}
         </SheetContent>
       </Sheet>
+
+      <AdHistory />
     </>
   );
 }
