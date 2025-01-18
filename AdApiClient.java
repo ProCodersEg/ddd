@@ -68,7 +68,7 @@ public class AdApiClient {
                 .url(BASE_URL + "ads?id=eq." + adId)
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
-                .addHeader("Content-Type", "application/json")
+                .addHeader("Content-Type", "application/merge-patch+json")
                 .addHeader("Prefer", "return=representation")
                 .patch(body)
                 .build();
@@ -119,7 +119,7 @@ public class AdApiClient {
                 .url(BASE_URL + "ads?id=eq." + adId)
                 .addHeader("apikey", getApiKey())
                 .addHeader("Authorization", "Bearer " + getApiKey())
-                .addHeader("Content-Type", "application/json")
+                .addHeader("Content-Type", "application/merge-patch+json")
                 .addHeader("Prefer", "return=representation")
                 .patch(body)
                 .build();
