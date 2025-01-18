@@ -1,12 +1,20 @@
 -- Enable RLS
 alter table storage.objects enable row level security;
 
--- Create policy to allow anonymous uploads to ad-images bucket
-create policy "Allow anonymous uploads"
+-- Create policy to allow authenticated uploads to ad-images bucket
+create policy "Allow authenticated uploads"
 on storage.objects for insert
 with check (
   bucket_id = 'ad-images'
-  AND auth.role() = 'anon'
+  AND auth.role() = 'authenticated'
+);
+
+-- Create policy to allow authenticated users to update their uploads
+create policy "Allow authenticated updates"
+on storage.objects for update
+using (
+  bucket_id = 'ad-images'
+  AND auth.role() = 'authenticated'
 );
 
 -- Create policy to allow public read access to ad images

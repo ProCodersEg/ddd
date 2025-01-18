@@ -21,17 +21,6 @@ export function MediaUpload({ value, onChange }: MediaUploadProps) {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
-      
-      // Create the bucket if it doesn't exist
-      const { error: bucketError } = await supabase.storage.createBucket('ad-images', {
-        public: true,
-        fileSizeLimit: 1024 * 1024 * 2 // 2MB
-      });
-
-      // Ignore error if bucket already exists
-      if (bucketError && !bucketError.message.includes('already exists')) {
-        throw bucketError;
-      }
 
       const { error: uploadError, data } = await supabase.storage
         .from('ad-images')
