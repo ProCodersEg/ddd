@@ -63,44 +63,61 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
 
     setIsDeleting(true);
     try {
-      // Get the ad details before deletion for history
-      const { data: adToDelete } = await supabase
+      console.log("Starting delete process for ad:", id);
+      
+      // Get the ad details before deletion
+      const { data: adToDelete, error: fetchError } = await supabase
         .from('ads')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (adToDelete) {
-        // Create history entry first
-        const { error: historyError } = await supabase
-          .from('ad_history')
-          .insert({
-            ad_id: id,
-            action_type: 'deleted',
-            ad_name: adToDelete.title,
-            ad_image: adToDelete.image_url,
-            ad_description: adToDelete.description,
-            clicks_count: adToDelete.clicks
-          });
-
-        if (historyError) {
-          console.error('Error creating deletion history:', historyError);
-        }
-
-        // Delete the ad (history records will be automatically deleted due to CASCADE)
-        const { error: deleteError } = await supabase
-          .from('ads')
-          .delete()
-          .eq('id', id);
-
-        if (deleteError) throw deleteError;
-
-        toast({
-          title: "Success",
-          description: "Ad deleted successfully",
-        });
-        onUpdate();
+      if (fetchError) {
+        console.error("Error fetching ad details:", fetchError);
+        throw fetchError;
       }
+
+      if (!adToDelete) {
+        console.error("Ad not found");
+        throw new Error("Ad not found");
+      }
+
+      console.log("Creating deletion history entry");
+      // Create history entry first
+      const { error: historyError } = await supabase
+        .from('ad_history')
+        .insert({
+          ad_id: id,
+          action_type: 'deleted',
+          ad_name: adToDelete.title,
+          ad_image: adToDelete.image_url,
+          ad_description: adToDelete.description,
+          clicks_count: adToDelete.clicks
+        });
+
+      if (historyError) {
+        console.error('Error creating deletion history:', historyError);
+        throw historyError;
+      }
+
+      console.log("Deleting ad");
+      // Delete the ad (history records will be automatically deleted due to CASCADE)
+      const { error: deleteError } = await supabase
+        .from('ads')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) {
+        console.error("Error deleting ad:", deleteError);
+        throw deleteError;
+      }
+
+      console.log("Delete process completed successfully");
+      toast({
+        title: "Success",
+        description: "Ad deleted successfully",
+      });
+      onUpdate();
     } catch (error: any) {
       console.error("Delete operation failed:", error);
       toast({
