@@ -8,7 +8,6 @@ export interface Ad {
   image_url: string;
   redirect_url: string;
   start_date: string;
-  end_date: string;
   status: 'active' | 'paused';
   created_at: string;
   clicks: number;

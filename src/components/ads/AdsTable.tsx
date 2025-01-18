@@ -56,7 +56,7 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
             <TableHead>Title</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Campaign Period</TableHead>
+            <TableHead>Start Date</TableHead>
             <TableHead>Performance</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -79,10 +79,7 @@ export function AdsTable({ ads, onUpdate }: AdsTableProps) {
               </TableCell>
               <TableCell>{ad.status}</TableCell>
               <TableCell>
-                <div className="text-sm">
-                  <p>Start: {new Date(ad.start_date).toLocaleDateString()}</p>
-                  <p>End: {new Date(ad.end_date).toLocaleDateString()}</p>
-                </div>
+                {new Date(ad.start_date).toLocaleDateString()}
               </TableCell>
               <TableCell>
                 <div className="text-sm">

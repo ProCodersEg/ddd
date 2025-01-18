@@ -29,7 +29,6 @@ export function AdForm({ ad, onSuccess }: AdFormProps) {
       image_url: ad?.image_url || "",
       redirect_url: ad?.redirect_url || "",
       start_date: ad?.start_date || new Date().toISOString().slice(0, 16),
-      end_date: ad?.end_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
       status: ad?.status || "active",
       max_clicks: ad?.max_clicks || undefined,
       max_impressions: ad?.max_impressions || undefined,
