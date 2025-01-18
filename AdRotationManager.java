@@ -4,7 +4,7 @@ public class AdRotationManager {
     private final List<Ad> adsList = new ArrayList<>();
     private final Random random = new Random();
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private int currentAdIndex = -1; // Start at -1 to handle first ad correctly
+    private int currentAdIndex = -1;
     private final BannerAdView bannerAdView;
     private final AdApiClient adApiClient;
     private Runnable rotationRunnable;
@@ -42,9 +42,7 @@ public class AdRotationManager {
                             ad.setRedirectUrl(adJson.getString("redirect_url"));
                             ad.setStatus(adJson.getString("status"));
                             ad.setClicks(adJson.optInt("clicks", 0));
-                            ad.setImpressions(adJson.optInt("impressions", 0));
                             ad.setMaxClicks(adJson.has("max_clicks") ? adJson.getInt("max_clicks") : null);
-                            ad.setMaxImpressions(adJson.has("max_impressions") ? adJson.getInt("max_impressions") : null);
                             
                             if (shouldBeActive(ad)) {
                                 adsList.add(ad);
@@ -75,11 +73,7 @@ public class AdRotationManager {
 
     private boolean shouldBeActive(Ad ad) {
         if (ad == null) return false;
-        
-        boolean withinClickLimit = ad.getMaxClicks() == null || ad.getClicks() < ad.getMaxClicks();
-        boolean withinImpressionLimit = ad.getMaxImpressions() == null || ad.getImpressions() < ad.getMaxImpressions();
-        
-        return withinClickLimit && withinImpressionLimit;
+        return ad.getMaxClicks() == null || ad.getClicks() < ad.getMaxClicks();
     }
 
     private void startRotation() {
@@ -122,10 +116,8 @@ public class AdRotationManager {
             return;
         }
 
-        // Increment index and handle wrap-around
         currentAdIndex = (currentAdIndex + 1) % adsList.size();
         
-        // Safely get the current ad
         Ad currentAd = null;
         try {
             currentAd = adsList.get(currentAdIndex);
@@ -135,7 +127,6 @@ public class AdRotationManager {
             return;
         }
 
-        // Verify we have a valid ad
         if (currentAd == null) {
             Log.e("AdRotationManager", "Null ad encountered at index: " + currentAdIndex);
             adsList.remove(currentAdIndex);
@@ -146,10 +137,6 @@ public class AdRotationManager {
             return;
         }
 
-        // Update local impression count
-        currentAd.setImpressions(currentAd.getImpressions() + 1);
-
-        // Check if ad should still be active after this impression
         if (!shouldBeActive(currentAd)) {
             adsList.remove(currentAdIndex);
             if (adsList.isEmpty()) {
@@ -166,9 +153,6 @@ public class AdRotationManager {
                 return;
             }
         }
-
-        // Record impression with current count
-        adApiClient.recordAdImpression(currentAd.getId(), currentAd.getImpressions());
 
         final Ad finalAd = currentAd;
         handler.post(() -> {

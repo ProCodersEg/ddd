@@ -6,9 +6,7 @@ public class Ad {
     private String redirectUrl;
     private String status;
     private int clicks;
-    private int impressions;
     private Integer maxClicks;
-    private Integer maxImpressions;
 
     // Getters and setters
     public String getId() { return id; }
@@ -32,12 +30,6 @@ public class Ad {
     public int getClicks() { return clicks; }
     public void setClicks(int clicks) { this.clicks = clicks; }
     
-    public int getImpressions() { return impressions; }
-    public void setImpressions(int impressions) { this.impressions = impressions; }
-    
     public Integer getMaxClicks() { return maxClicks; }
     public void setMaxClicks(Integer maxClicks) { this.maxClicks = maxClicks; }
-    
-    public Integer getMaxImpressions() { return maxImpressions; }
-    public void setMaxImpressions(Integer maxImpressions) { this.maxImpressions = maxImpressions; }
 }
