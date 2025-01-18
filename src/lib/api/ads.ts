@@ -47,6 +47,7 @@ export async function recordAdClick(adId: string) {
     return;
   }
 
+  // Use the RPC function to increment clicks
   const { error } = await supabase
     .rpc('increment_ad_clicks', { ad_id: adId });
   
@@ -69,22 +70,6 @@ export async function recordAdClick(adId: string) {
       console.error('Error updating ad status:', updateError);
       throw updateError;
     }
-
-    // Create notification for reaching click limit
-    const { error: notificationError } = await supabase
-      .from('notifications')
-      .insert({
-        ad_id: adId,
-        ad_title: ad.title,
-        ad_image: ad.image_url,
-        message: "Ad has been paused after reaching its click limit.",
-        read: false
-      });
-
-    if (notificationError) {
-      console.error('Error creating notification:', notificationError);
-      throw notificationError;
-    }
   }
 }
 
@@ -105,22 +90,6 @@ export async function checkAndUpdateAdStatus(ad: Ad) {
     if (error) {
       console.error('Error updating ad status:', error);
       throw error;
-    }
-
-    // Create notification for reaching click limit
-    const { error: notificationError } = await supabase
-      .from('notifications')
-      .insert({
-        ad_id: ad.id,
-        ad_title: ad.title,
-        ad_image: ad.image_url,
-        message: "Ad has been paused after reaching its click limit.",
-        read: false
-      });
-
-    if (notificationError) {
-      console.error('Error creating notification:', notificationError);
-      throw notificationError;
     }
   }
 }
