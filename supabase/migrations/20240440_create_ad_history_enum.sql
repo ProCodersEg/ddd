@@ -1,3 +1,11 @@
+-- Check if enum type exists and drop it if it does
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ad_action') THEN
+        DROP TYPE ad_action CASCADE;
+    END IF;
+END $$;
+
 -- Create enum type for action_type
 CREATE TYPE ad_action AS ENUM ('added', 'updated', 'deleted');
 
