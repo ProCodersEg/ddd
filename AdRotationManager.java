@@ -42,7 +42,13 @@ public class AdRotationManager {
                             ad.setRedirectUrl(adJson.getString("redirect_url"));
                             ad.setStatus(adJson.getString("status"));
                             ad.setClicks(adJson.optInt("clicks", 0));
-                            ad.setMaxClicks(adJson.has("max_clicks") ? adJson.getInt("max_clicks") : null);
+                            
+                            // Safely handle null max_clicks
+                            if (!adJson.isNull("max_clicks")) {
+                                ad.setMaxClicks(adJson.getInt("max_clicks"));
+                            } else {
+                                ad.setMaxClicks(null);
+                            }
                             
                             if (shouldBeActive(ad)) {
                                 adsList.add(ad);
