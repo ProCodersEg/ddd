@@ -14,13 +14,27 @@ public class AdApiClient {
     }
 
     private String getApiKey() {
+        if (context == null) {
+            Log.w("AdApiClient", "Context is null, using default API key");
+            return API_KEY;
+        }
+
         try {
             ApplicationInfo ai = context.getPackageManager()
                 .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-            Bundle bundle = ai.metaData;
-            String apiKey = bundle.getString("supabase_api_key", API_KEY);
-            return apiKey != null ? apiKey : API_KEY;
-        } catch (PackageManager.NameNotFoundException | NullPointerException e) {
+            if (ai == null || ai.metaData == null) {
+                Log.w("AdApiClient", "ApplicationInfo or metadata is null, using default API key");
+                return API_KEY;
+            }
+            
+            String apiKey = ai.metaData.getString("supabase_api_key");
+            if (apiKey == null || apiKey.isEmpty()) {
+                Log.w("AdApiClient", "API key not found in metadata, using default");
+                return API_KEY;
+            }
+            
+            return apiKey;
+        } catch (PackageManager.NameNotFoundException e) {
             Log.w("AdApiClient", "Failed to load API key from metadata, using default", e);
             return API_KEY;
         }
